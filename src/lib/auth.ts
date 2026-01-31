@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+const API_BASE_URL = import.meta.env.VITE_API_BASE || "";
 
 export async function checkAuth(): Promise<boolean> {
   try {

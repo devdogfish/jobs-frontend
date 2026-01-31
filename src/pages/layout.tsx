@@ -1,7 +1,6 @@
 import { useAuth } from "../hooks/useAuth";
-import { NewspaperExample } from "./NewspaperExample";
 
-export function Dashboard() {
+export function Layout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth("/login");
 
   if (isLoading) {
@@ -20,5 +19,5 @@ export function Dashboard() {
     return null;
   }
 
-  return <NewspaperExample />;
+  return <>{children}</>;
 }

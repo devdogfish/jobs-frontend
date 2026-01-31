@@ -7,7 +7,7 @@ interface FeaturedSideCardProps {
   application: Application;
 }
 
-const CHAR_LIMIT = 150;
+const CHAR_LIMIT = 100;
 
 export function FeaturedSideCard({ application }: FeaturedSideCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);

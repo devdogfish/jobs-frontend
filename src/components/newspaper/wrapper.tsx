@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Newspaper } from "../components/newspaper/Newspaper";
-import { reportApi } from "../api/client";
+import { Newspaper } from "./Newspaper";
+import { reportApi } from "../../api/client";
 import type { DailyApplicationReport } from "@/types/newspaper";
+import { useParams } from "react-router-dom";
 
-export function NewspaperExample() {
-  const [searchParams] = useSearchParams();
+export function NewspaperWrapper() {
   const [report, setReport] = useState<DailyApplicationReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const dateParam = searchParams.get("date");
+  const { date: dateParam } = useParams();
 
   useEffect(() => {
     async function fetchReport() {
