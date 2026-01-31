@@ -10,7 +10,6 @@ export interface ReportMetadata {
   issueNumber: number;
   date: string; // ISO date string or Date
   totalApplications: number;
-  highPriorityCount: number;
   averageSalary: string; // e.g., "$145K"
 }
 

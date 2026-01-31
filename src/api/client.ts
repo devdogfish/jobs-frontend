@@ -60,5 +60,9 @@ export const authApi = {
 };
 
 export const reportApi = {
-  getReport: () => apiRequest<DailyApplicationReport>("/job-report"),
+  getReport: (date?: string) => {
+    const endpoint = date ? `/job-report?date=${encodeURIComponent(date)}` : "/job-report";
+    return apiRequest<DailyApplicationReport>(endpoint);
+  },
+  getAllReports: () => apiRequest<unknown>("/job-report-all"),
 };

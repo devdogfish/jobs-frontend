@@ -1,23 +1,67 @@
+'use client';
+
+import { useState } from 'react';
 import type { Application } from "@/types/newspaper";
 
 interface ListCardProps {
   application: Application;
 }
 
+const CHAR_LIMIT = 50;
+
 export function ListCard({ application }: ListCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const isTruncated = application.description.length > CHAR_LIMIT;
+  const displayText = isExpanded || !isTruncated
+    ? application.description
+    : application.description.slice(0, CHAR_LIMIT);
+
+  const handleClick = () => {
+    if (isTruncated && !isExpanded) {
+      setIsExpanded(true);
+    } else {
+      window.open(application.href, "_blank");
+    }
+  };
+
+  const matchClass = application.matchLevel === 'high'
+    ? 'text-[#1a7f37] font-bold'
+    : application.matchLevel === 'medium'
+    ? 'text-[#d2a106] font-bold'
+    : '';
+
   return (
     <div
-      onClick={() => window.open(application.href, "_blank")}
+      onClick={handleClick}
       className="border border-[#ddd] p-4 transition-transform hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_#2b2b2b] cursor-pointer"
     >
       <span className="font-['Courier_New',monospace] text-[0.7rem] text-[#666] uppercase mb-2 block">
-        {application.location} • {application.compensation.displayValue}
+        {application.location}
+        {application.compensation?.displayValue &&
+         application.compensation.displayValue.toLowerCase() !== 'not specified' && (
+          <> • {application.compensation.displayValue}</>
+        )}
       </span>
       <h3 className="font-['Playfair_Display',serif] font-bold uppercase tracking-[-0.5px] text-base mb-1.5">
         {application.position}
       </h3>
-      <p className="text-[0.85rem] mt-1.5 font-bold">{application.company}</p>
-      <p className="text-[0.8rem] text-[#666]">{application.description}</p>
+      <div className="mb-1.5">
+        <span className="inline-block border border-[#2b2b2b] text-[#2b2b2b] px-1.5 py-0.5 text-[0.7rem] font-sans uppercase mr-1.5">
+          {application.company}
+        </span>
+        {application.matchPercentage && (
+          <span className={matchClass}>
+            {application.matchPercentage}% Match
+          </span>
+        )}
+      </div>
+      <p className="text-[0.8rem] text-[#666]">
+        {displayText}
+        {isTruncated && !isExpanded && (
+          <span className="text-[#444] italic">  ...more</span>
+        )}
+      </p>
     </div>
   );
 }

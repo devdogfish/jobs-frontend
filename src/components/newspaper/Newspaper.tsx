@@ -20,25 +20,20 @@ export function Newspaper({ report }: NewspaperProps) {
             The Daily Application
           </h1>
           <div className="mt-2.5 font-['Courier_New',monospace] text-xs text-[#666] uppercase">
-            ISSUE #{metadata.issueNumber} •{" "}
-            {new Date(metadata.date)
-              .toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })
-              .toUpperCase()}{" "}
-            • {metadata.totalApplications} APPLICATIONS •{" "}
-            {metadata.highPriorityCount} HIGH PRIORITY • AVG.{" "}
+            {metadata.totalApplications} APPLICATIONS • ISSUE #{metadata.issueNumber} •{" "}
+            {metadata.date}{" "}
+            •  AVG.{" "}
             {metadata.averageSalary}
           </div>
         </header>
 
         {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] md:grid-rows-[auto_auto] gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Featured Main Application */}
           {featuredApplications.main && (
-            <FeaturedMainCard application={featuredApplications.main} />
+            <div className="md:col-span-2 md:row-span-2">
+              <FeaturedMainCard application={featuredApplications.main} />
+            </div>
           )}
 
           {/* Featured Side Applications */}
@@ -47,25 +42,16 @@ export function Newspaper({ report }: NewspaperProps) {
           ))}
 
           {/* Other Applications Section */}
-          {otherApplications.length > 0 && (
-            <div className="md:col-span-2 border-t-[3px] border-double border-[#2b2b2b] pt-5 mt-2.5">
-              <div className="mb-4 font-sans font-bold uppercase text-[0.8rem] tracking-wider">
-                The Classifieds (Other Applications)
-              </div>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
-                {otherApplications.map((app, index) => (
-                  <ListCard key={index} application={app} />
-                ))}
-              </div>
-            </div>
-          )}
+          {otherApplications.map((app, index) => (
+            <ListCard key={index} application={app} />
+          ))}
         </div>
 
         {/* Footer */}
         <footer className="mt-5 border-t border-[#2b2b2b] pt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 font-sans text-[0.85rem]">
           <div>
-            <strong>NEXT ACTIONS:</strong> Follow up with{" "}
-            {/* <em>Starlight Studios</em> (Thurs) &bull;  */}
+            <strong>NEXT ACTIONS: </strong>
+            {/* Follow up with{" "}<em>Starlight Studios</em> (Thurs) &bull;  */}
             Update Portfolio
           </div>
           <LogoutButton />

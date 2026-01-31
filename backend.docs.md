@@ -1,7 +1,3 @@
-Documentation updated. Now here's the Frontend Developer Guide for Session Authentication:
-
----
-
 Frontend Developer Guide: Session-Based Authentication
 
 Overview

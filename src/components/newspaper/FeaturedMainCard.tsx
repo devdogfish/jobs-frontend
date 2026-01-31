@@ -1,26 +1,48 @@
 'use client';
 
+import { useState } from 'react';
 import type { Application } from '@/types/newspaper';
 
 interface FeaturedMainCardProps {
   application: Application;
 }
 
+const CHAR_LIMIT = 1000;
+
 export function FeaturedMainCard({ application }: FeaturedMainCardProps) {
-  const matchClass = application.matchLevel === 'high' 
-    ? 'text-[#1a7f37] font-bold' 
-    : application.matchLevel === 'medium' 
-    ? 'text-[#d2a106] font-bold' 
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const isTruncated = application.description.length > CHAR_LIMIT;
+  const displayText = isExpanded || !isTruncated
+    ? application.description
+    : application.description.slice(0, CHAR_LIMIT);
+
+  const handleClick = () => {
+    if (isTruncated && !isExpanded) {
+      setIsExpanded(true);
+    } else {
+      window.open(application.href, '_blank');
+    }
+  };
+
+  const matchClass = application.matchLevel === 'high'
+    ? 'text-[#1a7f37] font-bold'
+    : application.matchLevel === 'medium'
+    ? 'text-[#d2a106] font-bold'
     : '';
 
   return (
-    <article 
-      onClick={() => window.open(application.href, '_blank')}
-      className="md:col-start-1 md:col-end-2 md:row-start-1 md:row-end-3 border border-[#2b2b2b] p-5 bg-[#fbfbfb] flex flex-col justify-between transition-transform hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_#2b2b2b] cursor-pointer"
+    <article
+      onClick={handleClick}
+      className="h-full border border-[#2b2b2b] p-5 bg-[#fbfbfb] flex flex-col justify-between transition-transform hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_#2b2b2b] cursor-pointer"
     >
       <div>
         <span className="font-['Courier_New',monospace] text-xs text-[#666] uppercase mb-2 block">
-          {application.location} • {application.compensation.displayValue}
+          {application.location}
+          {application.compensation?.displayValue &&
+           application.compensation.displayValue.toLowerCase() !== 'not specified' && (
+            <> • {application.compensation.displayValue}</>
+          )}
         </span>
         <h2 className="font-['Playfair_Display',serif] font-bold uppercase tracking-[-0.5px] text-[2rem] leading-[1.1] mb-4">
           {application.position}
@@ -37,7 +59,10 @@ export function FeaturedMainCard({ application }: FeaturedMainCardProps) {
         </div>
         <hr className="border-0 border-t border-[#ccc] my-4" />
         <p className="text-[1.1rem] leading-[1.6]">
-          {application.description}
+          {displayText}
+          {isTruncated && !isExpanded && (
+            <span className="text-[#666] italic">  ...more</span>
+          )}
         </p>
       </div>
       {application.caption && (
