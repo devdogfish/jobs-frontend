@@ -1,14 +1,25 @@
-import type { DailyApplicationReport } from "@/types/application";
+import { useMemo } from "react";
+import { Link } from "react-router-dom";
+import type { Application } from "@/types/application";
+import { buildReport } from "@/lib/report";
 import { FeaturedMainCard } from "./FeaturedMainCard";
 import { FeaturedSideCard } from "./FeaturedSideCard";
 import { ListCard } from "./ListCard";
 import { LogoutButton } from "../auth/logout-button";
 
 interface NewspaperProps {
-  report: DailyApplicationReport;
+  applications: Application[];
+  date?: string;
 }
 
-export function Newspaper({ report }: NewspaperProps) {
+export function Newspaper({ applications, date }: NewspaperProps) {
+  const reportDate = date || new Date().toISOString().split("T")[0];
+
+  const report = useMemo(
+    () => buildReport(applications, reportDate),
+    [applications, reportDate]
+  );
+
   const { metadata, featuredApplications, otherApplications } = report;
 
   return (
@@ -53,7 +64,15 @@ export function Newspaper({ report }: NewspaperProps) {
             {/* Follow up with{" "}<em>Starlight Studios</em> (Thurs) &bull;  */}
             Update Portfolio
           </div>
-          <LogoutButton />
+          <div className="flex gap-3 items-center">
+            <Link
+              to="/"
+              className="bg-[#2b2b2b] text-white px-4 py-2 uppercase font-bold text-[0.8rem] hover:bg-[#1a1a1a] transition-colors"
+            >
+              ← Home
+            </Link>
+            <LogoutButton />
+          </div>
           {/* IMPORTANT: Keep this here for now as is in case I want to update it later
           <button className="bg-[#2b2b2b] text-white px-4 py-2 uppercase font-bold text-[0.8rem] hover:bg-[#1a1a1a] transition-colors">
             Print Report

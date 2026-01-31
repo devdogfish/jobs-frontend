@@ -1,53 +1,25 @@
-// Main report interface
-export interface DailyApplicationReport {
-  metadata: ReportMetadata;
-  featuredApplications: FeaturedApplications;
-  otherApplications: Application[];
-}
-
-// Report metadata (header information)
-export interface ReportMetadata {
-  issueNumber: number;
-  date: string;
-  totalApplications: number;
-  highPriorityCount: number;
-  averageSalary: string;
-}
-
-// Featured applications with priority hierarchy
-export interface FeaturedApplications {
-  main?: Application;
-  secondary: Application[];
-}
-
-// Core application data structure
+// Core application data structure (raw API response)
 export interface Application {
-  // renamed match to match
-  id: string; // unique identifier
-  company: string; // "Starlight Studios"
-  role: string; // "Senior Creative Developer"
-  location: string; // "San Francisco (Remote)"
-  locationType?: "remote" | "hybrid" | "on-site"; // Can be derived from location
+  id: string;
+  company: string;
+  role: string;
+  location: string;
+  locationType?: "remote" | "hybrid" | "on-site";
   description: string;
-
-  href: string; // Link to job posting
+  href: string;
   salary: {
     type: "salary" | "hourly" | "equity" | "range";
-    currency: string; // USD, GBP, EUR, etc.
-    amount?: number; // Single amount
-    displayValue: string; // Original formatted string like "$160k - $190k"
-  }; // "$160k - $190k"
-
-  match: number; // 95 (percentage 0-100)
-  date: string; // "2026-01-28" (ISO date for heatmap + sorting)
-  status: string; // "Drafted" or "Rejected" or "Interview pending"
-  tags: string[]; // ["React", "WebGL", "Three.js"]
+    currency: string;
+    amount?: number;
+    displayValue: string;
+  };
+  match: number; // percentage 0-100
+  date: string; // ISO date (YYYY-MM-DD)
+  status: string;
+  tags: string[];
 }
 
-// ============================================
 // Heatmap Calendar Types
-// ============================================
-
 export interface HeatmapDataPoint {
   date: string; // ISO date string (YYYY-MM-DD)
   count: number;

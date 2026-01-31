@@ -1,27 +1,25 @@
 import { useEffect, useState } from "react";
 import { Newspaper } from "./Newspaper";
-import { reportApi } from "../../api/client";
-import type { DailyApplicationReport } from "@/types/application";
+import { jobsApi } from "../../api/client";
+import type { Application } from "@/types/application";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getTodayISOString } from "@/utils";
 
 export function ReportPage() {
-  const [report, setReport] = useState<DailyApplicationReport | null>(null);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [noData, setNoData] = useState(false);
 
   const { date: dateParam } = useParams();
   const navigate = useNavigate();
   const todayISO = getTodayISOString();
 
   useEffect(() => {
-    async function fetchReport() {
+    async function fetchJobs() {
       setLoading(true);
       setError(null);
-      setNoData(false);
 
-      const response = await reportApi.getReport(dateParam ?? undefined);
+      const response = await jobsApi.getJobs(dateParam ?? undefined);
 
       if (response.error) {
         // If there's an error and we're not on today's date, redirect to today
@@ -30,23 +28,25 @@ export function ReportPage() {
           return;
         }
         setError(response.error);
-      } else if (response.data) {
-        setReport(response.data);
+        // Even on error, we may have an empty applications array
+        setApplications(response.data || []);
+      } else if (response.data && response.data.length > 0) {
+        setApplications(response.data);
       } else {
-        // No data returned
+        // No data returned or empty array
         if (dateParam && dateParam !== todayISO) {
           // Not today's date and no data - redirect to today
           navigate(`/report/${todayISO}`, { replace: true });
           return;
         }
-        // Today's date but no data - show fallback UI
-        setNoData(true);
+        // Today's date but no data
+        setApplications([]);
       }
 
       setLoading(false);
     }
 
-    fetchReport();
+    fetchJobs();
   }, [dateParam, navigate, todayISO]);
 
   if (loading) {
@@ -83,7 +83,7 @@ export function ReportPage() {
     );
   }
 
-  if (noData || !report) {
+  if (applications.length === 0) {
     return (
       <div className="min-h-screen bg-[#fdf6e3] flex items-center justify-center">
         <div className="text-center max-w-md">
@@ -104,5 +104,5 @@ export function ReportPage() {
     );
   }
 
-  return <Newspaper report={report} />;
+  return <Newspaper applications={applications} date={dateParam || todayISO} />;
 }
