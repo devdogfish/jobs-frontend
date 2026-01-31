@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import GitHubHeatmap from "@/components/home/github-heatmap";
 import { Search, SlidersHorizontal, LogOut } from "lucide-react";
 import {
@@ -7,113 +8,22 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { jobsApi } from "@/api/client";
+import type { Application } from "@/types/application";
 
-// Sample data - replace later
-const SAMPLE_APPLICATIONS = [
-  {
-    id: 1,
-    company: "Starlight Studios",
-    role: "Senior Creative Developer",
-    location: "San Francisco (Remote)",
-    salary: "$160k - $190k",
-    match: 95,
-    date: "2026-01-28",
-    status: "Cover letter drafted",
-    description:
-      "Seeking a specialist in WebGL and React for immersive marketing experiences.",
-    tags: ["React", "WebGL", "Three.js"],
-  },
-  {
-    id: 2,
-    company: "FinTech Corp",
-    role: "Full Stack Engineer",
-    location: "New York",
-    salary: "$150k",
-    match: 90,
-    date: "2026-01-27",
-    status: "Applied",
-    description: "Node.js backend pipelines and real-time data visualization.",
-    tags: ["Node.js", "Python", "Data Viz"],
-  },
-  {
-    id: 3,
-    company: "Veloce",
-    role: "Frontend Architect",
-    location: "Austin, TX",
-    salary: "$135k",
-    match: 85,
-    date: "2026-01-25",
-    status: "Interview scheduled",
-    description:
-      "Leading the migration from Vue to Next.js with strict TypeScript standards.",
-    tags: ["Next.js", "TypeScript", "Vue"],
-  },
-  {
-    id: 4,
-    company: "Agency X",
-    role: "React Developer",
-    location: "Remote",
-    salary: "$120k",
-    match: 78,
-    date: "2026-01-22",
-    status: "Pending",
-    description: "Standard e-commerce build with modern React patterns.",
-    tags: ["React", "E-commerce"],
-  },
-  {
-    id: 5,
-    company: "DataFlow",
-    role: "Python Engineer",
-    location: "Seattle",
-    salary: "$140k",
-    match: 72,
-    date: "2026-01-20",
-    status: "Applied",
-    description: "Automation & scraping focus with data pipeline expertise.",
-    tags: ["Python", "Automation", "Scraping"],
-  },
-  {
-    id: 6,
-    company: "Design Co.",
-    role: "UI/UX Technologist",
-    location: "London",
-    salary: "£85k",
-    match: 80,
-    date: "2026-01-18",
-    status: "Pending",
-    description: "Prototyping tools team building next-gen design software.",
-    tags: ["UI/UX", "Prototyping", "Figma"],
-  },
-  {
-    id: 7,
-    company: "SaaS Startup",
-    role: "Growth Engineer",
-    location: "Remote",
-    salary: "$130k",
-    match: 82,
-    date: "2026-01-15",
-    status: "Applied",
-    description: "Next.js & Analytics focused growth engineering role.",
-    tags: ["Next.js", "Analytics", "Growth"],
-  },
-  {
-    id: 8,
-    company: "Freelance",
-    role: "WebGL Specialist",
-    location: "Contract",
-    salary: "$90/hr",
-    match: 88,
-    date: "2026-01-10",
-    status: "Negotiating",
-    description: "3-month project building interactive 3D experiences.",
-    tags: ["WebGL", "Three.js", "Contract"],
-  },
-];
+// Virtual scrolling configuration
+const INITIAL_RENDER_COUNT = 15; // Number of items to render initially
+const RENDER_BUFFER = 10; // Number of items to render beyond visible area when scrolling
+const SCROLL_THRESHOLD = 200; // Pixels from bottom to trigger loading more
 
 // Generate heatmap data from applications
-function generateHeatmapData(applications: typeof SAMPLE_APPLICATIONS) {
+function generateHeatmapData(applications: Application[]) {
   const dataMap = new Map<string, number>();
   applications.forEach((app) => {
+    // Skip applications with missing or invalid dates (YYYY-MM-DD format)
+    if (!app.date || !/^\d{4}-\d{2}-\d{2}$/.test(app.date)) {
+      return;
+    }
     const count = dataMap.get(app.date) || 0;
     dataMap.set(app.date, count + 1);
   });
@@ -124,15 +34,61 @@ function generateHeatmapData(applications: typeof SAMPLE_APPLICATIONS) {
 }
 
 export default function HomePage() {
+  const navigate = useNavigate();
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
     status: "all",
     minMatch: 0,
     location: "all",
+    eligibility: "eligible" as "eligible" | "all" | "non-eligible",
   });
   const [isScrolled, setIsScrolled] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [renderedCount, setRenderedCount] = useState(INITIAL_RENDER_COUNT);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const DESCRIPTION_CHAR_LIMIT = 80;
+
+  const handleHeatmapCellClick = (date: string) => {
+    navigate(`/report/${date}`);
+  };
+
+  const toggleDescriptionExpanded = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleApplicationClick = (app: Application) => {
+    window.open(app.href, "_blank");
+  };
+
+  // Fetch all jobs on mount
+  useEffect(() => {
+    async function fetchAllJobs() {
+      setLoading(true);
+      setError(null);
+      const response = await jobsApi.getJobs();
+      if (response.error) {
+        setError(response.error);
+        setApplications([]);
+      } else {
+        setApplications(response.data || []);
+      }
+      setLoading(false);
+    }
+    fetchAllJobs();
+  }, []);
 
   // Focus search input on mount
   useEffect(() => {
@@ -165,7 +121,7 @@ export default function HomePage() {
 
   // Filter applications
   const filteredApplications = useMemo(() => {
-    return SAMPLE_APPLICATIONS.filter((app) => {
+    return applications.filter((app) => {
       const matchesSearch =
         searchQuery === "" ||
         app.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -182,11 +138,46 @@ export default function HomePage() {
         filters.location === "all" ||
         app.location.toLowerCase().includes(filters.location.toLowerCase());
 
+      // undefined is treated as eligible
+      const isEligible = app.eligible !== false;
+      const matchesEligibility =
+        filters.eligibility === "all" ||
+        (filters.eligibility === "eligible" && isEligible) ||
+        (filters.eligibility === "non-eligible" && !isEligible);
+
       return (
-        matchesSearch && matchesStatus && matchesMinMatch && matchesLocation
+        matchesSearch && matchesStatus && matchesMinMatch && matchesLocation && matchesEligibility
       );
     });
+  }, [applications, searchQuery, filters]);
+
+  // Reset rendered count when filters/search change
+  useEffect(() => {
+    setRenderedCount(INITIAL_RENDER_COUNT);
+    // Also scroll to top when filters change
+    scrollContainerRef.current?.scrollTo(0, 0);
   }, [searchQuery, filters]);
+
+  // Virtual scrolling: only render a subset of filtered applications
+  const visibleApplications = useMemo(
+    () => filteredApplications.slice(0, renderedCount),
+    [filteredApplications, renderedCount]
+  );
+
+  // Handle scroll to load more items
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    setIsScrolled(target.scrollTop > 0);
+
+    // Check if we're near the bottom
+    const distanceFromBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
+    if (distanceFromBottom < SCROLL_THRESHOLD) {
+      setRenderedCount((prev) => {
+        const next = prev + RENDER_BUFFER;
+        return Math.min(next, filteredApplications.length);
+      });
+    }
+  }, [filteredApplications.length]);
 
   // Generate heatmap data based on filtered results
   const heatmapData = useMemo(
@@ -194,18 +185,56 @@ export default function HomePage() {
     [filteredApplications],
   );
 
-  const uniqueStatuses = [
-    ...new Set(SAMPLE_APPLICATIONS.map((app) => app.status)),
-  ];
-  const uniqueLocations = [
-    ...new Set(
-      SAMPLE_APPLICATIONS.map((app) => {
-        if (app.location.toLowerCase().includes("remote")) return "Remote";
-        if (app.location.toLowerCase().includes("contract")) return "Contract";
-        return app.location.split(",")[0].split("(")[0].trim();
-      }),
-    ),
-  ];
+  const uniqueStatuses = useMemo(
+    () => [...new Set(applications.map((app) => app.status))],
+    [applications]
+  );
+  const uniqueLocations = useMemo(
+    () => [
+      ...new Set(
+        applications.map((app) => {
+          if (app.location.toLowerCase().includes("remote")) return "Remote";
+          if (app.location.toLowerCase().includes("contract")) return "Contract";
+          return app.location.split(",")[0].split("(")[0].trim();
+        }),
+      ),
+    ],
+    [applications]
+  );
+
+  if (loading) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="font-serif text-2xl text-foreground mb-2">
+            Loading applications...
+          </div>
+          <div className="text-muted-foreground font-serif italic">
+            Fetching your job applications
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="font-serif text-2xl text-foreground mb-2">
+            Unable to load applications
+          </div>
+          <div className="text-muted-foreground font-serif mb-4">{error}</div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-foreground text-background font-serif hover:opacity-80 transition-opacity"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-background text-foreground font-sans leading-relaxed flex flex-col overflow-hidden">
@@ -266,6 +295,7 @@ export default function HomePage() {
                 renderTooltip={(cell) =>
                   `${cell.count} application${cell.count !== 1 ? "s" : ""} on ${cell.date}`
                 }
+                onCellClick={handleHeatmapCellClick}
                 className="[&_.github-heatmap]:!p-0 [&_.heatmap-year]:!mb-0 [&_.heatmap-title]:hidden [&_.heatmap-legend]:!mt-2 [&_.heatmap-legend]:!mb-1 h-full"
               />
               <ScrollBar orientation="horizontal" />
@@ -379,6 +409,34 @@ export default function HomePage() {
                     </select>
                   </div>
 
+                  <div>
+                    <label className="block font-sans font-bold uppercase text-[0.65rem] tracking-wider mb-1.5 text-foreground">
+                      Eligibility
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFilters((f) => ({
+                          ...f,
+                          eligibility:
+                            f.eligibility === "eligible"
+                              ? "all"
+                              : f.eligibility === "all"
+                                ? "non-eligible"
+                                : "eligible",
+                        }))
+                      }
+                      className="w-full border border-border bg-card px-3 py-1.5 font-sans text-sm text-left
+                               transition-all duration-200
+                               hover:shadow-[1px_1px_0px_#2b2b2b]
+                               focus:outline-none focus:shadow-[2px_2px_0px_#2b2b2b]"
+                    >
+                      {filters.eligibility === "eligible" && "Eligible Only"}
+                      {filters.eligibility === "all" && "All Jobs"}
+                      {filters.eligibility === "non-eligible" && "Non-Eligible Only"}
+                    </button>
+                  </div>
+
                   <button
                     type="button"
                     onClick={() =>
@@ -386,6 +444,7 @@ export default function HomePage() {
                         status: "all",
                         minMatch: 0,
                         location: "all",
+                        eligibility: "eligible",
                       })
                     }
                     className="w-full border border-border px-3 py-1.5 font-sans text-[0.7rem] uppercase tracking-wide
@@ -405,7 +464,7 @@ export default function HomePage() {
       <div
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto"
-        onScroll={(e) => setIsScrolled(e.currentTarget.scrollTop > 0)}
+        onScroll={handleScroll}
       >
         <div className="max-w-[900px] mx-auto bg-card border-x border-border">
           <div className="divide-y divide-border">
@@ -416,44 +475,88 @@ export default function HomePage() {
                 </p>
               </div>
             ) : (
-              filteredApplications.map((app) => (
-                <article
-                  key={app.id}
-                  className="px-6 py-4 transition-all duration-200 hover:bg-accent cursor-pointer group"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <span className="font-mono text-[0.7rem] text-muted-foreground uppercase block mb-1">
-                        {app.location} • {app.salary}
-                      </span>
-                      <h3 className="font-serif font-bold text-lg leading-tight mb-1 group-hover:underline underline-offset-2">
-                        {app.role}
-                      </h3>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="inline-block bg-primary text-primary-foreground px-1.5 py-0.5 text-[0.65rem] font-sans uppercase">
-                          {app.company}
+              visibleApplications.map((app) => {
+                const isExpanded = expandedIds.has(app.id);
+                const isTruncated = app.description.length > DESCRIPTION_CHAR_LIMIT;
+                const displayText = isExpanded || !isTruncated
+                  ? app.description
+                  : app.description.slice(0, DESCRIPTION_CHAR_LIMIT);
+
+                return (
+                  <article
+                    key={app.id}
+                    onClick={() => handleApplicationClick(app)}
+                    className="px-6 py-4 transition-all duration-200 hover:bg-accent cursor-pointer group"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <span className="font-mono text-[0.7rem] text-muted-foreground uppercase block mb-1">
+                          {app.location}
+                          {app.salary?.displayValue &&
+                            app.salary.displayValue.toLowerCase() !== "not specified" && (
+                              <> • {app.salary.displayValue}</>
+                            )}
                         </span>
-                        <span
-                          className={`font-bold text-[0.8rem] ${app.match >= 90 ? "text-[#1a7f37]" : app.match >= 80 ? "text-[#d2a106]" : "text-muted-foreground"}`}
+                        <h3 className="font-serif font-bold text-lg leading-tight mb-1 group-hover:underline underline-offset-2">
+                          {app.role}
+                        </h3>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="inline-block bg-primary text-primary-foreground px-1.5 py-0.5 text-[0.65rem] font-sans uppercase">
+                            {app.company}
+                          </span>
+                          <span
+                            className={`font-bold text-[0.8rem] ${app.match >= 90 ? "text-[#1a7f37]" : app.match >= 80 ? "text-[#d2a106]" : "text-muted-foreground"}`}
+                          >
+                            {app.match}% Match
+                          </span>
+                        </div>
+                        <p
+                          onClick={(e) => {
+                            if (isTruncated) {
+                              e.stopPropagation();
+                              toggleDescriptionExpanded(app.id);
+                            }
+                          }}
+                          className={`text-[0.9rem] text-muted-foreground leading-snug ${isTruncated && !isExpanded ? "cursor-pointer" : ""}`}
                         >
-                          {app.match}% Match
+                          {displayText}
+                          {isTruncated && !isExpanded && (
+                            <span className="text-[#666] italic"> ...read more</span>
+                          )}
+                          {isTruncated && isExpanded && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleDescriptionExpanded(app.id);
+                              }}
+                              className="text-[#666] italic ml-1 hover:underline"
+                            >
+                              show less
+                            </button>
+                          )}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="font-mono text-[0.65rem] text-muted-foreground uppercase block mb-1">
+                          {app.date}
+                        </span>
+                        <span className="inline-block border border-border px-2 py-0.5 text-[0.65rem] font-sans uppercase">
+                          {app.status}
                         </span>
                       </div>
-                      <p className="text-[0.9rem] text-muted-foreground leading-snug line-clamp-1">
-                        {app.description}
-                      </p>
                     </div>
-                    <div className="text-right shrink-0">
-                      <span className="font-mono text-[0.65rem] text-muted-foreground uppercase block mb-1">
-                        {app.date}
-                      </span>
-                      <span className="inline-block border border-border px-2 py-0.5 text-[0.65rem] font-sans uppercase">
-                        {app.status}
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              ))
+                  </article>
+                );
+              })
+            )}
+            {/* Loading indicator when more items are available */}
+            {visibleApplications.length < filteredApplications.length && (
+              <div className="px-6 py-4 text-center">
+                <p className="font-mono text-muted-foreground text-xs">
+                  Showing {visibleApplications.length} of {filteredApplications.length} applications — scroll for more
+                </p>
+              </div>
             )}
           </div>
         </div>

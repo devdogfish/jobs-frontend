@@ -17,17 +17,5 @@ export interface Application {
   date: string; // ISO date (YYYY-MM-DD)
   status: string;
   tags: string[];
-}
-
-// Heatmap Calendar Types
-export interface HeatmapDataPoint {
-  date: string; // ISO date string (YYYY-MM-DD)
-  count: number;
-}
-
-export interface HeatmapCalendarResponse {
-  data: HeatmapDataPoint[];
-  startDate: string;
-  endDate: string;
-  totalApplications: number;
+  eligible?: boolean; // undefined treated as eligible
 }

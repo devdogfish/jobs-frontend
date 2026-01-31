@@ -35,6 +35,9 @@ When updating components from old types:
 - `src/components/report/` - Report card components (FeaturedMainCard, FeaturedSideCard, ListCard, Newspaper)
 - `src/components/home/` - Homepage components including GitHub-style heatmap
 
+## Data Validation Notes
+- **Heatmap date validation**: The `generateHeatmapData` function in `page.tsx` filters out applications with invalid dates (must match `YYYY-MM-DD` format). This prevents applications with missing/malformed dates from grouping together and inflating the max count, which would throw off the color scaling.
+
 ## Build & Dev Commands
 ```bash
 bun install      # Install dependencies

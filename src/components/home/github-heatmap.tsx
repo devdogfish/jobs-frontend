@@ -37,6 +37,8 @@ interface GitHubHeatmapProps {
   renderTooltip?: ((cell: HoveredCell) => string) | null;
   emptyColor?: string | null;
   className?: string;
+  onCellClick?: (date: string, count: number) => void;
+  maxCount?: number; // External max for consistent color scaling across filters
 }
 
 const GitHubHeatmap = ({
@@ -51,6 +53,8 @@ const GitHubHeatmap = ({
   renderTooltip = null,
   emptyColor = null,
   className = "",
+  onCellClick,
+  maxCount: externalMaxCount,
 }: GitHubHeatmapProps) => {
   const [hoveredCell, setHoveredCell] = useState<HoveredCell | null>(null);
 
@@ -69,8 +73,9 @@ const GitHubHeatmap = ({
       return emptyColor || colors[0];
     }
 
-    // Find max count for scaling
-    const maxCount = Math.max(...data.map((d) => d.count), 1);
+    // Use external max if provided, otherwise calculate from current data
+    const maxCount =
+      externalMaxCount ?? Math.max(...data.map((d) => d.count), 1);
 
     // Determine which color level (1-4)
     const level = Math.min(Math.ceil((count / maxCount) * 4), 4);
@@ -370,30 +375,39 @@ const GitHubHeatmap = ({
                 <div className="heatmap-grid">
                   {weeks.map((week, weekIndex) => (
                     <div key={weekIndex} className="heatmap-week">
-                      {week.map((cell) => (
-                        <div
-                          key={cell.date}
-                          className={`heatmap-cell ${!cell.isCurrentYear ? "out-of-range" : ""}`}
-                          style={{
-                            backgroundColor: getColor(cell.count),
-                          }}
-                          onMouseEnter={(e) =>
-                            setHoveredCell({
-                              ...cell,
-                              x: e.clientX,
-                              y: e.clientY,
-                            })
-                          }
-                          onMouseMove={(e) =>
-                            setHoveredCell({
-                              ...cell,
-                              x: e.clientX,
-                              y: e.clientY,
-                            })
-                          }
-                          onMouseLeave={() => setHoveredCell(null)}
-                        />
-                      ))}
+                      {week.map((cell) => {
+                        const isClickable = cell.count >= 1 && onCellClick;
+                        return (
+                          <div
+                            key={cell.date}
+                            className={`heatmap-cell ${!cell.isCurrentYear ? "out-of-range" : ""} ${isClickable ? "clickable" : ""}`}
+                            style={{
+                              backgroundColor: getColor(cell.count),
+                              cursor: isClickable ? "pointer" : "default",
+                            }}
+                            onClick={() => {
+                              if (isClickable) {
+                                onCellClick(cell.date, cell.count);
+                              }
+                            }}
+                            onMouseEnter={(e) =>
+                              setHoveredCell({
+                                ...cell,
+                                x: e.clientX,
+                                y: e.clientY,
+                              })
+                            }
+                            onMouseMove={(e) =>
+                              setHoveredCell({
+                                ...cell,
+                                x: e.clientX,
+                                y: e.clientY,
+                              })
+                            }
+                            onMouseLeave={() => setHoveredCell(null)}
+                          />
+                        );
+                      })}
                     </div>
                   ))}
                 </div>
