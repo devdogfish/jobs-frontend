@@ -30,7 +30,7 @@ export async function login(
     } else {
       return { success: false, error: data.error || "Login failed" };
     }
-  } catch (error) {
+  } catch {
     return { success: false, error: "Network error. Please try again." };
   }
 }

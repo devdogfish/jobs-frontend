@@ -74,7 +74,7 @@ const GitHubHeatmap = ({
 
       const weeks = [];
       let currentWeek = [];
-      let currentDate = new Date(firstDay);
+      const currentDate = new Date(firstDay);
 
       while (currentDate <= lastDay) {
         const dateStr = currentDate.toISOString().split("T")[0];
@@ -164,19 +164,18 @@ const GitHubHeatmap = ({
     : null;
 
   return (
-    <div
-      className={`github-heatmap ${className}`}
-      style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
-    >
+    <div className={`github-heatmap ${className}`}>
       <style>{`
         .github-heatmap {
           display: block;
-          width: 100%;
+          width: max-content;
+          min-width: 100%;
         }
 
         .heatmap-year {
           margin-bottom: 40px;
-          width: 100%;
+          width: max-content;
+          min-width: 100%;
         }
 
         .heatmap-year:last-child {
@@ -193,7 +192,8 @@ const GitHubHeatmap = ({
         .heatmap-grid-wrapper {
           display: flex;
           gap: 12px;
-          width: 100%;
+          width: max-content;
+          min-width: 100%;
         }
 
         .heatmap-weekday-labels {
@@ -242,8 +242,8 @@ const GitHubHeatmap = ({
 
         .heatmap-grid {
           display: flex;
-          justify-content: space-between;
-          width: 100%;
+          gap: ${cellGap}px;
+          width: max-content;
         }
 
         .heatmap-week {
@@ -255,7 +255,6 @@ const GitHubHeatmap = ({
         .heatmap-cell {
           width: ${cellSize}px;
           height: ${cellSize}px;
-          border-radius: 2px;
           cursor: pointer;
           transition: all 0.1s ease;
         }
@@ -274,7 +273,6 @@ const GitHubHeatmap = ({
           background: #24292f;
           color: white;
           padding: 8px 12px;
-          border-radius: 6px;
           font-size: 12px;
           pointer-events: none;
           z-index: 1000;
@@ -299,7 +297,6 @@ const GitHubHeatmap = ({
         .heatmap-legend-cell {
           width: ${cellSize}px;
           height: ${cellSize}px;
-          border-radius: 2px;
         }
       `}</style>
 
@@ -396,6 +393,7 @@ const GitHubHeatmap = ({
         </div>
       )}
 
+      {/* DO NOT DELETE - Legend hidden for now, uncomment to restore:
       <div className="heatmap-legend">
         <span className="heatmap-legend-label">Less</span>
         {colors.map((color, index) => (
@@ -407,6 +405,7 @@ const GitHubHeatmap = ({
         ))}
         <span className="heatmap-legend-label">More</span>
       </div>
+      */}
     </div>
   );
 };
@@ -414,25 +413,21 @@ const GitHubHeatmap = ({
 // Demo component showing usage examples
 const GitHubHeatmapDemo = () => {
   // Generate sample data
-  const generateSampleData = () => {
-    const data = [];
-    const startDate = new Date(2024, 0, 1);
-    const endDate = new Date(2024, 11, 31);
-
-    for (
-      let d = new Date(startDate);
-      d <= endDate;
-      d.setDate(d.getDate() + 1)
-    ) {
-      const dateStr = d.toISOString().split("T")[0];
-      const count = Math.random() > 0.3 ? Math.floor(Math.random() * 20) : 0;
-      data.push({ date: dateStr, count });
-    }
-
-    return data;
-  };
-
-  const sampleData = generateSampleData();
+  // Static sample data for demo (a few representative dates)
+  const sampleData = [
+    { date: "2024-01-15", count: 5 },
+    { date: "2024-02-20", count: 12 },
+    { date: "2024-03-10", count: 3 },
+    { date: "2024-04-05", count: 18 },
+    { date: "2024-05-22", count: 7 },
+    { date: "2024-06-14", count: 15 },
+    { date: "2024-07-30", count: 9 },
+    { date: "2024-08-18", count: 4 },
+    { date: "2024-09-25", count: 11 },
+    { date: "2024-10-12", count: 6 },
+    { date: "2024-11-08", count: 14 },
+    { date: "2024-12-20", count: 8 },
+  ];
 
   // Custom color schemes
   const greenScheme = ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"];

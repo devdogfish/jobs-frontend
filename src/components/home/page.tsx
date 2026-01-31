@@ -200,7 +200,7 @@ export default function HomePage() {
             </button>
 
             <a
-              href="/daily-report"
+              href="/report"
               className="bg-primary text-primary-foreground px-4 py-1.5 uppercase font-bold text-[0.75rem] tracking-wider font-sans
                        transition-all duration-200
                        hover:shadow-[1px_1px_0px_#2b2b2b]
@@ -223,22 +223,33 @@ export default function HomePage() {
             </div>
           </header>
 
-          {/* Heatmap - full width */}
-          <div className="px-6 pb-3 border-b border-border">
-            <GitHubHeatmap
-              data={heatmapData}
-              startYear={2026}
-              endYear={2026}
-              colors={["#ebedf0", "#d4d4d0", "#a8a8a0", "#666660", "#2b2b2b"]}
-              cellSize={12}
-              cellGap={3}
-              showMonthLabels={true}
-              showWeekdayLabels={false}
-              renderTooltip={(cell) =>
-                `${cell.count} application${cell.count !== 1 ? "s" : ""} on ${cell.date}`
-              }
-              className="w-full [&_.github-heatmap]:!w-full [&_.github-heatmap]:!p-0 [&_.heatmap-year]:!mb-0 [&_.heatmap-title]:hidden [&_.heatmap-grid-wrapper]:!w-full [&_.heatmap-grid-container]:!flex-1 [&_.heatmap-grid]:!justify-between [&_.heatmap-legend]:!mt-2 [&_.heatmap-legend]:!mb-1"
-            />
+          {/* Heatmap section with info box */}
+          <div className="px-6 pb-3 border-b border-border flex gap-4">
+            {/* Heatmap - horizontally scrollable, matches box height */}
+            <div className="overflow-x-auto flex-1 min-w-0" style={{ height: 142 }}>
+              <GitHubHeatmap
+                data={heatmapData}
+                startYear={2026}
+                endYear={2026}
+                colors={["#ebedf0", "#d4d4d0", "#a8a8a0", "#666660", "#2b2b2b"]}
+                cellSize={12}
+                cellGap={3}
+                showMonthLabels={true}
+                showWeekdayLabels={false}
+                renderTooltip={(cell) =>
+                  `${cell.count} application${cell.count !== 1 ? "s" : ""} on ${cell.date}`
+                }
+                className="[&_.github-heatmap]:!p-0 [&_.heatmap-year]:!mb-0 [&_.heatmap-title]:hidden [&_.heatmap-legend]:!mt-2 [&_.heatmap-legend]:!mb-1"
+              />
+            </div>
+
+            {/* Info box - fixed square matching full heatmap height (without legend) */}
+            <div
+              className="flex-shrink-0 border border-border bg-card flex items-center justify-center font-mono text-sm text-muted-foreground"
+              style={{ width: 142, height: 142 }}
+            >
+              Hello World
+            </div>
           </div>
 
           {/* Search + Filters */}
