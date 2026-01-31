@@ -6,6 +6,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 // Sample data - replace later
 const SAMPLE_APPLICATIONS = [
@@ -129,7 +130,9 @@ export default function HomePage() {
     minMatch: 0,
     location: "all",
   });
+  const [isScrolled, setIsScrolled] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Focus search input on mount
   useEffect(() => {
@@ -224,36 +227,34 @@ export default function HomePage() {
           </header>
 
           {/* Heatmap section with info box */}
-          <div className="px-6 pb-3 border-b border-border flex gap-4">
-            {/* Heatmap - horizontally scrollable, matches box height */}
-            <div className="overflow-x-auto flex-1 min-w-0" style={{ height: 142 }}>
+          <div className="px-6 pb-3 border-b border-border flex gap-4 h-[142px]">
+            {/* Heatmap - horizontally scrollable with custom scrollbar, matches box height */}
+            <ScrollArea className="flex-1 min-w-0 h-full [&_[data-radix-scroll-area-viewport]>div]:!h-full [&_[data-radix-scroll-area-viewport]>div]:!block [&_[data-slot=scroll-area-scrollbar]]:absolute [&_[data-slot=scroll-area-scrollbar]]:top-0 [&_[data-slot=scroll-area-scrollbar]]:left-0 [&_[data-slot=scroll-area-scrollbar]]:right-0 [&_[data-slot=scroll-area-scrollbar]]:opacity-0 [&_[data-slot=scroll-area-scrollbar]]:hover:opacity-100 [&_[data-slot=scroll-area-scrollbar][data-state=visible]]:opacity-100 [&_[data-slot=scroll-area-scrollbar]]:transition-opacity">
               <GitHubHeatmap
                 data={heatmapData}
                 startYear={2026}
                 endYear={2026}
                 colors={["#ebedf0", "#d4d4d0", "#a8a8a0", "#666660", "#2b2b2b"]}
-                cellSize={12}
+                cellSize={13}
                 cellGap={3}
                 showMonthLabels={true}
                 showWeekdayLabels={false}
                 renderTooltip={(cell) =>
                   `${cell.count} application${cell.count !== 1 ? "s" : ""} on ${cell.date}`
                 }
-                className="[&_.github-heatmap]:!p-0 [&_.heatmap-year]:!mb-0 [&_.heatmap-title]:hidden [&_.heatmap-legend]:!mt-2 [&_.heatmap-legend]:!mb-1"
+                className="[&_.github-heatmap]:!p-0 [&_.heatmap-year]:!mb-0 [&_.heatmap-title]:hidden [&_.heatmap-legend]:!mt-2 [&_.heatmap-legend]:!mb-1 h-full"
               />
-            </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
 
-            {/* Info box - fixed square matching full heatmap height (without legend) */}
-            <div
-              className="flex-shrink-0 border border-border bg-card flex items-center justify-center font-mono text-sm text-muted-foreground"
-              style={{ width: 142, height: 142 }}
-            >
+            {/* Info box - fixed square matching full heatmap height */}
+            <div className="flex-shrink-0 border border-border bg-card flex items-center justify-center font-mono text-sm text-muted-foreground w-[142px] h-full relative shadow-[-24px_0_20px_-4px_rgba(255,255,255,0.9)]">
               Hello World
             </div>
           </div>
 
           {/* Search + Filters */}
-          <div className="px-6 py-3 border-b border-border shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center gap-3">
+          <div className={`px-6 py-3 border-b border-border flex items-center gap-3 transition-shadow duration-200 [clip-path:inset(0_0_-10px_0)] ${isScrolled ? "shadow-[0_4px_8px_-2px_rgba(0,0,0,0.08)]" : ""}`}>
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
@@ -377,7 +378,11 @@ export default function HomePage() {
       </div>
 
       {/* Scrollable Results Section */}
-      <div className="flex-1 overflow-y-auto">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto"
+        onScroll={(e) => setIsScrolled(e.currentTarget.scrollTop > 0)}
+      >
         <div className="max-w-[900px] mx-auto bg-card border-x border-border">
           <div className="divide-y divide-border">
             {filteredApplications.length === 0 ? (
