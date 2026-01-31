@@ -1,4 +1,4 @@
-import type { DailyApplicationReport } from "../types/newspaper";
+import type { DailyApplicationReport } from "../types/application";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 
@@ -61,7 +61,9 @@ export const authApi = {
 
 export const reportApi = {
   getReport: (date?: string) => {
-    const endpoint = date ? `/job-report?date=${encodeURIComponent(date)}` : "/job-report";
+    const endpoint = date
+      ? `/job-report?date=${encodeURIComponent(date)}`
+      : "/job-report";
     return apiRequest<DailyApplicationReport>(endpoint);
   },
   getAllReports: () => apiRequest<unknown>("/job-report-all"),

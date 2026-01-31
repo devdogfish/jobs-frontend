@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Newspaper } from "./Newspaper";
 import { reportApi } from "../../api/client";
-import type { DailyApplicationReport } from "@/types/newspaper";
+import type { DailyApplicationReport } from "@/types/application";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getTodayISOString } from "@/utils";
 

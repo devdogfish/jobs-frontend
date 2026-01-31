@@ -1,4 +1,4 @@
-import type { DailyApplicationReport } from "@/types/newspaper";
+import type { DailyApplicationReport } from "@/types/application";
 import { FeaturedMainCard } from "./FeaturedMainCard";
 import { FeaturedSideCard } from "./FeaturedSideCard";
 import { ListCard } from "./ListCard";
@@ -20,9 +20,8 @@ export function Newspaper({ report }: NewspaperProps) {
             The Daily Application
           </h1>
           <div className="mt-2.5 font-['Courier_New',monospace] text-xs text-[#666] uppercase">
-            {metadata.totalApplications} APPLICATIONS • ISSUE #{metadata.issueNumber} •{" "}
-            {metadata.date}{" "}
-            •  AVG.{" "}
+            {metadata.totalApplications} APPLICATIONS • ISSUE #
+            {metadata.issueNumber} • {metadata.date} • AVG.{" "}
             {metadata.averageSalary}
           </div>
         </header>

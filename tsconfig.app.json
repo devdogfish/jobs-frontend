@@ -30,5 +30,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "src/types/newspaper.d.ts"]
+  "include": ["src", "src/types/application.d.ts"]
 }

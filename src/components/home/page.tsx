@@ -139,6 +139,30 @@ export default function HomePage() {
     searchInputRef.current?.focus();
   }, []);
 
+  // Keyboard shortcuts to focus search input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isTyping = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+
+      // "/" key (only when not typing)
+      if (e.key === "/" && !isTyping) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      // Cmd+k or Cmd+f
+      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "f")) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   // Filter applications
   const filteredApplications = useMemo(() => {
     return SAMPLE_APPLICATIONS.filter((app) => {
@@ -186,10 +210,10 @@ export default function HomePage() {
   return (
     <div className="h-screen bg-background text-foreground font-sans leading-relaxed flex flex-col overflow-hidden">
       {/* Fixed Top Section */}
-      <div className="flex-shrink-0 bg-card z-10">
+      <div className="shrink-0 bg-card z-10">
         {/* Navigation */}
         <nav>
-          <div className="max-w-[900px] mx-auto px-6 py-2.5 flex items-center justify-between border-x border-b border-border">
+          <div className="max-w-225 mx-auto px-6 py-2.5 flex items-center justify-between border-x border-b border-border">
             <button
               type="button"
               className="font-mono text-[0.75rem] text-muted-foreground uppercase tracking-wide
@@ -215,10 +239,10 @@ export default function HomePage() {
         </nav>
 
         {/* Header + Heatmap + Search in one unified block */}
-        <div className="max-w-[900px] mx-auto border-x border-border">
+        <div className="max-w-225 mx-auto border-x border-border">
           {/* Header */}
-          <header className="text-center px-6 pt-5 pb-3">
-            <h1 className="font-serif font-bold uppercase tracking-[-0.5px] text-[1.75rem] sm:text-[2rem] border-b-[3px] border-double border-foreground pb-2 mb-1">
+          <header className="text-center p-6 pb-9">
+            <h1 className="font-serif font-bold uppercase tracking-[-0.5px] text-[1.75rem] sm:text-[2rem] mb-1">
               The Daily Application
             </h1>
             <div className="font-mono text-[0.7rem] text-muted-foreground uppercase tracking-wide">

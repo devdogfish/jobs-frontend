@@ -2,21 +2,43 @@
 
 import React, { useState } from "react";
 
-/**
- * GitHubHeatmap - A highly customizable activity heatmap component
- *
- * @param {Object} props
- * @param {Array<{date: string, count: number}>} props.data - Array of activity data
- * @param {number} props.startYear - Starting year for the heatmap
- * @param {number} props.endYear - Ending year for the heatmap
- * @param {Array<string>} props.colors - Color scale (5 levels: empty + 4 intensity levels)
- * @param {number} props.cellSize - Size of each cell in pixels
- * @param {number} props.cellGap - Gap between cells in pixels
- * @param {boolean} props.showMonthLabels - Show month labels
- * @param {boolean} props.showWeekdayLabels - Show weekday labels
- * @param {Function} props.renderTooltip - Custom tooltip renderer
- * @param {string} props.emptyColor - Color for days with no activity
- */
+interface DataItem {
+  date: string;
+  count: number;
+}
+
+interface CellData {
+  date: string;
+  count: number;
+  day: number;
+  month: number;
+  isCurrentYear: boolean;
+}
+
+interface HoveredCell extends CellData {
+  x: number;
+  y: number;
+}
+
+interface MonthLabel {
+  month: string;
+  weekIndex: number;
+}
+
+interface GitHubHeatmapProps {
+  data?: DataItem[];
+  startYear?: number;
+  endYear?: number;
+  colors?: string[];
+  cellSize?: number;
+  cellGap?: number;
+  showMonthLabels?: boolean;
+  showWeekdayLabels?: boolean;
+  renderTooltip?: ((cell: HoveredCell) => string) | null;
+  emptyColor?: string | null;
+  className?: string;
+}
+
 const GitHubHeatmap = ({
   data = [],
   startYear = new Date().getFullYear(),
@@ -29,8 +51,8 @@ const GitHubHeatmap = ({
   renderTooltip = null,
   emptyColor = null,
   className = "",
-}) => {
-  const [hoveredCell, setHoveredCell] = useState(null);
+}: GitHubHeatmapProps) => {
+  const [hoveredCell, setHoveredCell] = useState<HoveredCell | null>(null);
 
   // Convert data array to map for quick lookup
   const dataMap = React.useMemo(() => {
@@ -42,7 +64,7 @@ const GitHubHeatmap = ({
   }, [data]);
 
   // Get color based on count
-  const getColor = (count) => {
+  const getColor = (count: number) => {
     if (count === 0 || count === null || count === undefined) {
       return emptyColor || colors[0];
     }
@@ -125,12 +147,12 @@ const GitHubHeatmap = ({
   ];
 
   // Calculate month positions for labels
-  const getMonthLabels = (weeks) => {
-    const monthLabels = [];
+  const getMonthLabels = (weeks: CellData[][]): MonthLabel[] => {
+    const monthLabels: MonthLabel[] = [];
     let lastMonth = -1;
 
     weeks.forEach((week, weekIndex) => {
-      const firstDayOfWeek = week.find((day) => day.isCurrentYear);
+      const firstDayOfWeek = week.find((day: CellData) => day.isCurrentYear);
       if (firstDayOfWeek) {
         const month = firstDayOfWeek.month;
         if (month !== lastMonth && weekIndex > 0) {
@@ -146,7 +168,7 @@ const GitHubHeatmap = ({
     return monthLabels;
   };
 
-  const defaultTooltip = (cell) => {
+  const defaultTooltip = (cell: HoveredCell) => {
     const date = new Date(cell.date);
     const formatted = date.toLocaleDateString("en-US", {
       weekday: "short",
