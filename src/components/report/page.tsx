@@ -4,7 +4,7 @@ import { reportApi } from "../../api/client";
 import type { DailyApplicationReport } from "@/types/newspaper";
 import { useParams } from "react-router-dom";
 
-export function NewspaperWrapper() {
+export function ReportPage() {
   const [report, setReport] = useState<DailyApplicationReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

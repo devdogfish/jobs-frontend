@@ -1,18 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import LoginPage from "./pages/LoginPage";
-import { Layout } from "./pages/layout";
-import { NewspaperWrapper } from "./components/newspaper/wrapper";
+
+import { Layout } from "./components/layout";
+import { ReportPage } from "./components/report/page";
+import AuthPage from "./components/auth/page";
+import HomePage from "./components/home/page";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={<AuthPage />} />
         <Route
           path="/"
           element={
             <Layout>
-              <NewspaperWrapper />
+              <HomePage />
             </Layout>
           }
         />
@@ -20,10 +22,9 @@ function App() {
           path="/report/:date"
           element={
             <Layout>
-              <NewspaperWrapper />
+              <ReportPage />
             </Layout>
           }
-          
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

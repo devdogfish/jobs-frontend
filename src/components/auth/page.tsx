@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { login } from "@/lib/auth";
 
-export default function LoginPage() {
+export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -87,11 +87,11 @@ export default function LoginPage() {
         </form>
 
         {/* Footer tagline */}
-        <footer className="mt-10 pt-6 border-t border-[#dcdcdc] text-center">
+        {/* Keep as comment <footer className="mt-10 pt-6 border-t border-[#dcdcdc] text-center">
           <p className="font-['Courier_New',monospace] text-[0.75rem] text-[#666] italic">
             "All the applications fit to print"
           </p>
-        </footer>
+        </footer> */}
       </div>
     </div>
   );
