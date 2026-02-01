@@ -1,3 +1,5 @@
+"use client";
+
 import Map, {
   Source,
   Layer,
@@ -150,7 +152,26 @@ export default function MyMap({
         map.setPaintProperty("water", "fill-color", WATERMASS_COLOR);
       }
 
-      // 3. Start spinning on load if no item is selected
+      // Make the background transparent
+      map.setFog({
+        color: "white", // lower atmosphere (as you like)
+        "high-color": "rgba(0, 0, 0, 0)", // upper atmosphere
+        "horizon-blend": 0,
+        "space-color": "rgba(0, 0, 0, 0)", // fully transparent
+        "star-intensity": 0,
+      });
+
+      // Also ensure the background layer itself is transparent
+      map.addLayer({
+        id: "transparent-bg",
+        type: "background",
+        paint: {
+          "background-color": "rgba(0,0,0,0)",
+          "background-opacity": 0,
+        },
+      });
+
+      // 5. Start spinning on load if no item is selected
       if (!selectedIdRef.current) {
         startSpinning();
       }
@@ -258,6 +279,7 @@ export default function MyMap({
         overflow: "hidden",
         position: "relative",
       }}
+
     >
       <div
         style={{
@@ -269,6 +291,7 @@ export default function MyMap({
           transform: `scale(${1 / WORLD_SCALE})`,
           transformOrigin: "center center",
         }}
+        // className="bg-pink-300"
       >
         <Map
           ref={mapRef}

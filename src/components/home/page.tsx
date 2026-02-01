@@ -60,7 +60,7 @@ export default function HomePage() {
   const INITIAL_RENDER_COUNT = 15;
   const RENDER_BUFFER = 10;
   const SCROLL_THRESHOLD = 200;
-  const [showMapboxBorder, setShowMapboxBorder] = useState(true);
+  const [showMapboxBorder, setShowMapboxBorder] = useState(false);
 
   const handleHeatmapCellClick = (date: string) => {
     navigate(`/report/${date}`);
@@ -298,9 +298,9 @@ export default function HomePage() {
   }
 
   return (
-    <div className="h-screen bg-background text-foreground font-sans leading-relaxed flex flex-col overflow-hidden">
+    <div className="h-screen text-foreground font-sans leading-relaxed flex flex-col overflow-hidden">
       {/* Fixed Top Section */}
-      <div className="shrink-0 bg-card z-10">
+      <div className="shrink-0  z-10">
         {/* Navigation */}
         <Navbar link="/report" text="Daily Report" />
 
@@ -327,30 +327,41 @@ export default function HomePage() {
           {/* Heatmap section with info box */}
           <div className="px-6 pb-3 border-b border-border flex gap-4 h-35.5">
             {/* Heatmap */}
-            <ScrollArea className="flex-1 min-w-0 h-full [&_[data-radix-scroll-area-viewport]>div]:h-full! [&_[data-radix-scroll-area-viewport]>div]:block! **:data-[slot=scroll-area-scrollbar]:absolute **:data-[slot=scroll-area-scrollbar]:top-0 **:data-[slot=scroll-area-scrollbar]:left-0 **:data-[slot=scroll-area-scrollbar]:right-0 **:data-[slot=scroll-area-scrollbar]:opacity-0 **:data-[slot=scroll-area-scrollbar]:hover:opacity-100 [&_[data-slot=scroll-area-scrollbar][data-state=visible]]:opacity-100 **:data-[slot=scroll-area-scrollbar]:transition-opacity">
-              <GitHubHeatmap
-                data={heatmapData}
-                maxCount={globalMaxCount}
-                startYear={2026}
-                endYear={2026}
-                colors={["#ebedf0", "#d4d4d0", "#a8a8a0", "#666660", "#2b2b2b"]}
-                cellSize={13}
-                cellGap={3}
-                showMonthLabels={true}
-                showWeekdayLabels={false}
-                renderTooltip={(cell) =>
-                  `${cell.count} application${cell.count !== 1 ? "s" : ""} on ${cell.date}`
-                }
-                onCellClick={handleHeatmapCellClick}
-                className="[&_.github-heatmap]:p-0! [&_.heatmap-year]:mb-0! [&_.heatmap-title]:hidden [&_.heatmap-legend]:mt-2! [&_.heatmap-legend]:mb-1! h-full"
-              />
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+            <div className="relative flex-1 min-w-0 h-full">
+              <ScrollArea className="h-full [&_[data-radix-scroll-area-viewport]>div]:h-full! [&_[data-radix-scroll-area-viewport]>div]:block! **:data-[slot=scroll-area-scrollbar]:absolute **:data-[slot=scroll-area-scrollbar]:top-0 **:data-[slot=scroll-area-scrollbar]:left-0 **:data-[slot=scroll-area-scrollbar]:right-0 **:data-[slot=scroll-area-scrollbar]:opacity-0 **:data-[slot=scroll-area-scrollbar]:hover:opacity-100 [&_[data-slot=scroll-area-scrollbar][data-state=visible]]:opacity-100 **:data-[slot=scroll-area-scrollbar]:transition-opacity">
+                <GitHubHeatmap
+                  data={heatmapData}
+                  maxCount={globalMaxCount}
+                  startYear={2026}
+                  endYear={2026}
+                  colors={[
+                    "#ebedf0",
+                    "#d4d4d0",
+                    "#a8a8a0",
+                    "#666660",
+                    "#2b2b2b",
+                  ]}
+                  cellSize={13}
+                  cellGap={3}
+                  showMonthLabels={true}
+                  showWeekdayLabels={false}
+                  renderTooltip={(cell) =>
+                    `${cell.count} application${cell.count !== 1 ? "s" : ""} on ${cell.date}`
+                  }
+                  onCellClick={handleHeatmapCellClick}
+                  className="[&_.github-heatmap]:p-0! [&_.heatmap-year]:mb-0! [&_.heatmap-title]:hidden [&_.heatmap-legend]:mt-2! [&_.heatmap-legend]:mb-1! h-full"
+                />
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+
+              {/* Shadow overlay on the right */}
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-linear-to-l from-white to-transparent" />
+            </div>
 
             {/* Info box with Map */}
             <div
               className={cn(
-                "shrink-0 bg-card flex items-center justify-center font-mono text-sm text-muted-foreground w-35.5 h-full relative shadow-[-24px_0_20px_-4px_rgba(255,255,255,0.9)] border",
+                "shrink-0 flex items-center justify-center font-mono text-sm text-muted-foreground w-35.5 h-full relative shadow-[-30px_0_40px_8px_rgba(255,255,255,1)] border bg-transparent",
                 "border border-transparent transition-all duration-300 ease-in-out",
                 showMapboxBorder && " border-border",
               )}
