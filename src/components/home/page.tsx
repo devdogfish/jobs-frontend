@@ -50,6 +50,8 @@ export default function HomePage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [renderedCount, setRenderedCount] = useState(15);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -75,6 +77,8 @@ export default function HomePage() {
   };
 
   const handleApplicationClick = (app: Application) => {
+    // Also select the item when clicked directly
+    setSelectedId(app.id);
     window.open(app.href, "_blank");
   };
 
@@ -163,15 +167,46 @@ export default function HomePage() {
     });
   }, [applications, searchQuery, filters]);
 
+  // Handle click from map pin
+  const handlePinClick = useCallback(
+    (id: string) => {
+      // 1. Mark as selected so it keeps the hover style
+      setSelectedId(id);
+
+      // 2. Expand the description if not already expanded
+      setExpandedIds((prev) => new Set(prev).add(id));
+
+      // 3. Find the index in filtered list to ensure it is rendered
+      const index = filteredApplications.findIndex((app) => {
+        console.log("APP.ID Type: ", typeof app.id);
+        console.log("ID Type: ", typeof id);
+        return app.id === id;
+      });
+
+      if (index !== -1) {
+        // If the item is further down than what is currently rendered, expand the list
+        if (index >= renderedCount) {
+          setRenderedCount(index + 5);
+        }
+
+        // 4. Wait for render cycle to update DOM, then scroll
+        setTimeout(() => {
+          const element = document.getElementById(`job-card-${id}`);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 100);
+      }
+    },
+    [filteredApplications, renderedCount],
+  );
   // Reset rendered count and scroll position when filters/search change
-  // This is a legitimate use of setState in an effect - we're synchronizing UI state
-  // (virtual scrolling position) with filter changes. The effect won't cascade because
-  // we're not modifying the dependencies (searchQuery, filters) within the effect.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setRenderedCount(INITIAL_RENDER_COUNT);
     scrollContainerRef.current?.scrollTo(0, 0);
     setIsScrolled(false);
+    setSelectedId(null); // Clear selection on filter change
   }, [searchQuery, filters]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -293,7 +328,7 @@ export default function HomePage() {
 
           {/* Heatmap section with info box */}
           <div className="px-6 pb-3 border-b border-border flex gap-4 h-35.5">
-            {/* Heatmap - horizontally scrollable with custom scrollbar, matches box height */}
+            {/* Heatmap */}
             <ScrollArea className="flex-1 min-w-0 h-full [&_[data-radix-scroll-area-viewport]>div]:h-full! [&_[data-radix-scroll-area-viewport]>div]:block! **:data-[slot=scroll-area-scrollbar]:absolute **:data-[slot=scroll-area-scrollbar]:top-0 **:data-[slot=scroll-area-scrollbar]:left-0 **:data-[slot=scroll-area-scrollbar]:right-0 **:data-[slot=scroll-area-scrollbar]:opacity-0 **:data-[slot=scroll-area-scrollbar]:hover:opacity-100 [&_[data-slot=scroll-area-scrollbar][data-state=visible]]:opacity-100 **:data-[slot=scroll-area-scrollbar]:transition-opacity">
               <GitHubHeatmap
                 data={heatmapData}
@@ -314,10 +349,12 @@ export default function HomePage() {
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
 
-            {/* Info box - fixed square matching full heatmap height */}
+            {/* Info box with Map */}
             <div className="shrink-0 border border-border bg-card flex items-center justify-center font-mono text-sm text-muted-foreground w-35.5 h-full relative shadow-[-24px_0_20px_-4px_rgba(255,255,255,0.9)]">
-              {/* Hello World */}
-              <MyMap applications={applications} />
+              <MyMap
+                applications={filteredApplications}
+                onPinClick={handlePinClick}
+              />
             </div>
           </div>
 
@@ -483,6 +520,7 @@ export default function HomePage() {
           </div>
         ) : (
           visibleApplications.map((app) => {
+            const isSelected = app.id === selectedId;
             const isExpanded = expandedIds.has(app.id);
             const isTruncated = app.description.length > DESCRIPTION_CHAR_LIMIT;
             const displayText =
@@ -493,8 +531,11 @@ export default function HomePage() {
             return (
               <article
                 key={app.id}
+                id={`job-card-${app.id}`}
                 onClick={() => handleApplicationClick(app)}
-                className="px-6 py-4 transition-all duration-200 hover:bg-accent cursor-pointer group"
+                className={`px-6 py-4 transition-all duration-200 cursor-pointer group ${
+                  isSelected ? "bg-accent" : "hover:bg-accent"
+                }`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">

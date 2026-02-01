@@ -1,8 +1,13 @@
-import Map, { Source, Layer, type LayerProps } from "react-map-gl/mapbox";
+import Map, {
+  Source,
+  Layer,
+  type LayerProps,
+  type MapRef,
+} from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import type { Application } from "@/types/application";
-import type { FeatureCollection } from "geojson";
+import type { FeatureCollection, Point } from "geojson";
 import type { MapLayerMouseEvent } from "mapbox-gl";
 
 const token = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
@@ -10,13 +15,15 @@ const token = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 const WORLD_SCALE = 1.6;
 const WINDOW_WIDTH = 140;
 const WINDOW_HEIGHT = 127;
-const MAP_SIZE = 512; // Standard tile size to keep Mapbox happy
+const MAP_SIZE = 512;
 
-export default function MyMap({
-  applications,
-}: {
+interface MyMapProps {
   applications: Application[];
-}) {
+  onPinClick: (id: string) => void;
+}
+
+export default function MyMap({ applications, onPinClick }: MyMapProps) {
+  const mapRef = useRef<MapRef>(null);
   const [hoveredId, setHoveredId] = useState<string | number | null>(null);
 
   const geoJsonData: FeatureCollection = useMemo(
@@ -40,6 +47,30 @@ export default function MyMap({
     const { features } = event;
     setHoveredId(features && features[0] ? features[0].properties?.id : null);
   }, []);
+
+  const onClick = useCallback(
+    (event: MapLayerMouseEvent) => {
+      const { features } = event;
+      if (features && features[0] && features[0].properties?.id) {
+        const feature = features[0];
+        const geometry = feature.geometry as Point;
+
+        // Smooth zoom to the pin
+        if (geometry.type === "Point") {
+          const [lng, lat] = geometry.coordinates;
+          mapRef.current?.flyTo({
+            center: [lng, lat],
+            zoom: 14, // Zoom in close
+            duration: 2000,
+            essential: true,
+          });
+        }
+
+        onPinClick(String(features[0].properties.id));
+      }
+    },
+    [onPinClick],
+  );
 
   const layerStyle: LayerProps = useMemo(
     () => ({
@@ -67,7 +98,7 @@ export default function MyMap({
         height: WINDOW_HEIGHT,
         overflow: "hidden",
         position: "relative",
-        borderRadius: "8px", // Optional: makes the tiny window look cleaner
+        borderRadius: "8px",
       }}
     >
       <div
@@ -75,15 +106,14 @@ export default function MyMap({
           width: MAP_SIZE,
           height: MAP_SIZE,
           position: "absolute",
-          // This centers the 512px map inside your 140x127 window
           top: (WINDOW_HEIGHT - MAP_SIZE) / 2,
           left: (WINDOW_WIDTH - MAP_SIZE) / 2,
-          // This scales the entire map visually while keeping interactions aligned
           transform: `scale(${1 / WORLD_SCALE})`,
           transformOrigin: "center center",
         }}
       >
         <Map
+          ref={mapRef}
           mapboxAccessToken={token}
           initialViewState={{
             longitude: 0,
@@ -95,6 +125,7 @@ export default function MyMap({
           interactiveLayerIds={["point"]}
           onMouseMove={onMouseMove}
           onMouseLeave={() => setHoveredId(null)}
+          onClick={onClick}
           cursor={hoveredId ? "pointer" : "auto"}
           style={{ width: "100%", height: "100%" }}
         >
