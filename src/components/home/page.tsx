@@ -8,7 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { jobsApi } from "@/api/client";
+import { jobsApi } from "@/lib/api";
 import type { Application } from "@/types/application";
 import {
   CenteredBox,
@@ -16,6 +16,7 @@ import {
   MyScrollableSection,
   Navbar,
 } from "../shared";
+import MyMap from "./map";
 
 // Generate heatmap data from applications
 function generateHeatmapData(applications: Application[]) {
@@ -315,7 +316,8 @@ export default function HomePage() {
 
             {/* Info box - fixed square matching full heatmap height */}
             <div className="shrink-0 border border-border bg-card flex items-center justify-center font-mono text-sm text-muted-foreground w-35.5 h-full relative shadow-[-24px_0_20px_-4px_rgba(255,255,255,0.9)]">
-              Hello World
+              {/* Hello World */}
+              <MyMap applications={applications} />
             </div>
           </div>
 

@@ -126,3 +126,16 @@
     overscroll-behavior: none;
   }
 }
+
+.map-container,.map, #map {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+}
+
+div.mapboxgl-control-container, div.mapboxgl-control-container *  {
+  display: none !important;
+  opacity: 0 !important;
+}

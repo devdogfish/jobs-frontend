@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Newspaper } from "./Newspaper";
-import { jobsApi } from "../../api/client";
+import { jobsApi } from "../../lib/api";
 import type { Application } from "@/types/application";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getTodayISOString } from "@/lib/utils";

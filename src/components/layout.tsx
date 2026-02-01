@@ -1,6 +1,7 @@
+import { Outlet } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout() {
   const { isAuthenticated, isLoading } = useAuth("/login");
 
   if (isLoading) {
@@ -19,5 +20,5 @@ export function Layout({ children }: { children: React.ReactNode }) {
     return null;
   }
 
-  return <>{children}</>;
+  return <Outlet />;
 }

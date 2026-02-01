@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
-import { authApi } from '../api/client';
-import type { AuthContextValue, LoginCredentials } from '../types/auth';
-import { AuthContext } from './AuthContextValue';
+import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { authApi } from "../lib/api";
+import type { AuthContextValue, LoginCredentials } from "../types/auth";
+import { AuthContext } from "./AuthContextValue";
 
 export { AuthContext };
 
@@ -26,28 +26,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(false);
   }, []);
 
-  const login = useCallback(async (credentials: LoginCredentials): Promise<boolean> => {
-    setError(null);
-    setIsLoading(true);
+  const login = useCallback(
+    async (credentials: LoginCredentials): Promise<boolean> => {
+      setError(null);
+      setIsLoading(true);
 
-    const { data, error } = await authApi.login(credentials.password);
+      const { data, error } = await authApi.login(credentials.password);
 
-    if (error) {
-      setError(error);
+      if (error) {
+        setError(error);
+        setIsLoading(false);
+        return false;
+      }
+
+      if (data?.success) {
+        setIsAuthenticated(true);
+        setIsLoading(false);
+        return true;
+      }
+
+      setError("Login failed");
       setIsLoading(false);
       return false;
-    }
-
-    if (data?.success) {
-      setIsAuthenticated(true);
-      setIsLoading(false);
-      return true;
-    }
-
-    setError('Login failed');
-    setIsLoading(false);
-    return false;
-  }, []);
+    },
+    [],
+  );
 
   const logout = useCallback(async () => {
     await authApi.logout();
@@ -81,11 +84,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     const handleUnauthorized = () => {
       setIsAuthenticated(false);
-      setError('Session expired. Please login again.');
+      setError("Session expired. Please login again.");
     };
 
-    window.addEventListener('auth:unauthorized', handleUnauthorized);
-    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    return () =>
+      window.removeEventListener("auth:unauthorized", handleUnauthorized);
   }, []);
 
   const value: AuthContextValue = {
@@ -97,9 +101,5 @@ export function AuthProvider({ children }: AuthProviderProps) {
     checkAuth,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

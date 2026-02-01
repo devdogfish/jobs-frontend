@@ -5,6 +5,7 @@ import { ReportPage } from "./components/report/page";
 import AuthPage from "./components/auth/page";
 import HomePage from "./components/home/page";
 import { getTodayISOString } from "./lib/utils";
+// import MyMap from "./components/home/map";
 
 function ReportRedirect() {
   return <Navigate to={`/report/${getTodayISOString()}`} replace />;
@@ -15,23 +16,14 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<AuthPage />} />
-        <Route
-          path="/"
-          element={
-            <Layout>
-              <HomePage />
-            </Layout>
-          }
-        />
+        <Route element={<Layout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/report/:date" element={<ReportPage />} />
+        </Route>
+
         <Route path="/report" element={<ReportRedirect />} />
-        <Route
-          path="/report/:date"
-          element={
-            <Layout>
-              <ReportPage />
-            </Layout>
-          }
-        />
+        {/* <Route path="/map" element={<MyMap />} /> */}
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

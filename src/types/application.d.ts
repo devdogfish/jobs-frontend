@@ -18,4 +18,6 @@ export interface Application {
   status: string;
   tags: string[];
   eligible?: boolean; // undefined treated as eligible
+  latitude?: number;
+  longitude?: number;
 }
