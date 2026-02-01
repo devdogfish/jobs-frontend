@@ -102,6 +102,9 @@ export default function MyMap({
     const map = mapRef.current;
     if (!map || selectedIdRef.current) return;
 
+    // Stop any in-progress animation before starting the zoom-out
+    map.stop();
+
     const currentCenter = map.getCenter();
 
     map.flyTo({
@@ -189,6 +192,9 @@ export default function MyMap({
   }, [stopSpinning]);
 
   useEffect(() => {
+    // Always stop any in-progress animation immediately when selection changes
+    mapRef.current?.stop();
+
     if (selectedId) {
       stopSpinning();
       if (restartTimeoutId.current) clearTimeout(restartTimeoutId.current);

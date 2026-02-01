@@ -77,6 +77,7 @@ export default function HomePage() {
   };
 
   const handleApplicationClick = (app: Application) => {
+    console.log("Selected job:", app);
     if (selectedId === app.id) {
       // Deselect if clicking already-selected item
       setSelectedId(null);
@@ -575,7 +576,8 @@ export default function HomePage() {
         ) : (
           visibleApplications.map((app) => {
             const isSelected = app.id === selectedId;
-            const isTruncated = app.description.length > DESCRIPTION_CHAR_LIMIT;
+            const isTruncated =
+              !isSelected && app.description.length > DESCRIPTION_CHAR_LIMIT;
             const displayText = isTruncated
               ? app.description.slice(0, DESCRIPTION_CHAR_LIMIT)
               : app.description;
