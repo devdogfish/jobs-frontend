@@ -17,6 +17,7 @@ import {
   Navbar,
 } from "../shared";
 import MyMap from "./map";
+import { cn } from "@/lib/utils";
 
 // Generate heatmap data from applications
 function generateHeatmapData(applications: Application[]) {
@@ -59,6 +60,7 @@ export default function HomePage() {
   const INITIAL_RENDER_COUNT = 15;
   const RENDER_BUFFER = 10;
   const SCROLL_THRESHOLD = 200;
+  const [showMapboxBorder, setShowMapboxBorder] = useState(true);
 
   const handleHeatmapCellClick = (date: string) => {
     navigate(`/report/${date}`);
@@ -346,11 +348,20 @@ export default function HomePage() {
             </ScrollArea>
 
             {/* Info box with Map */}
-            <div className="shrink-0 border border-border bg-card flex items-center justify-center font-mono text-sm text-muted-foreground w-35.5 h-full relative shadow-[-24px_0_20px_-4px_rgba(255,255,255,0.9)]">
+            <div
+              className={cn(
+                "shrink-0 bg-card flex items-center justify-center font-mono text-sm text-muted-foreground w-35.5 h-full relative shadow-[-24px_0_20px_-4px_rgba(255,255,255,0.9)] border",
+                "border border-transparent transition-all duration-300 ease-in-out",
+                showMapboxBorder && " border-border",
+              )}
+            >
               <MyMap
                 applications={filteredApplications}
                 onPinClick={handlePinClick}
                 selectedId={selectedId}
+                onZoomChange={(isAtZoomZero) =>
+                  setShowMapboxBorder(!isAtZoomZero)
+                }
               />
             </div>
           </div>

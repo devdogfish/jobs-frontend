@@ -9,40 +9,64 @@ import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import type { Application } from "@/types/application";
 import type { FeatureCollection, Point } from "geojson";
 import type { MapLayerMouseEvent } from "mapbox-gl";
+import {
+  AUTO_SPIN_DELAY,
+  WORLD_SCALE,
+  WINDOW_WIDTH,
+  WINDOW_HEIGHT,
+  MAP_SIZE,
+  PIN_SIZE,
+  PIN_SIZE_HIGHLIGHT,
+  LANDMASS_COLOR,
+  WATERMASS_COLOR,
+  majorRoadsLayer,
+  secondaryRoadsLayer,
+  countryBordersLayer,
+  greenSpacesLayer,
+  majorCitiesLayer,
+  buildingLayer,
+} from "@/lib/map.config";
 
 const token = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
-
-// --- CONFIGURATION ---
-const AUTO_SPIN_DELAY = 2000;
-const WORLD_SCALE = 1.6;
-const WINDOW_WIDTH = 140;
-const WINDOW_HEIGHT = 127;
-const MAP_SIZE = 512;
 
 interface MyMapProps {
   applications: Application[];
   selectedId: string | null;
   onPinClick: (id: string) => void;
+  onZoomChange?: (isAtZoomZero: boolean) => void;
 }
 
 export default function MyMap({
   applications,
   selectedId,
   onPinClick,
+  onZoomChange,
 }: MyMapProps) {
   const mapRef = useRef<MapRef>(null);
   const [hoveredId, setHoveredId] = useState<string | number | null>(null);
 
-  // -- Animation Refs --
+  // -- Refs for State Tracking --
   const spinAnimationFrameId = useRef<number | null>(null);
-  // FIX: Use ReturnType so it works in Browser (number) or Node (object)
   const restartTimeoutId = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isUserInteracting = useRef(false);
+  const isSpinningEnabled = useRef(true);
+  const selectedIdRef = useRef(selectedId);
 
-  // -- 1. Smooth Spin Loop (The Frame Logic) --
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
+
+  // -- 1. Smooth Spin Loop --
   const spinGlobe = useCallback(() => {
     const map = mapRef.current;
-    if (!map || isUserInteracting.current || selectedId) return;
+    if (
+      !isSpinningEnabled.current ||
+      !map ||
+      isUserInteracting.current ||
+      selectedIdRef.current
+    ) {
+      return;
+    }
 
     const zoom = map.getZoom();
     if (zoom > 5) return;
@@ -53,30 +77,28 @@ export default function MyMap({
     center.lng -= speed;
 
     map.jumpTo({ center });
-
-    // Recursively request the next frame
     spinAnimationFrameId.current = requestAnimationFrame(spinGlobe);
-  }, [selectedId]);
+  }, []);
 
   // -- 2. Stop/Start Helpers --
-
   const stopSpinning = useCallback(() => {
+    isSpinningEnabled.current = false;
     if (spinAnimationFrameId.current) {
       cancelAnimationFrame(spinAnimationFrameId.current);
       spinAnimationFrameId.current = null;
     }
   }, []);
 
-  // FIX: Always use this to start. It guarantees we don't spawn parallel loops.
   const startSpinning = useCallback(() => {
-    stopSpinning(); // Cancel any existing loop first!
-    spinGlobe(); // Start the new loop
+    stopSpinning();
+    isSpinningEnabled.current = true;
+    spinGlobe();
   }, [stopSpinning, spinGlobe]);
 
-  // -- 3. The "Fly Back then Spin" Logic --
+  // -- 3. Interaction Handlers --
   const returnToAutoRotate = useCallback(() => {
     const map = mapRef.current;
-    if (!map || selectedId) return;
+    if (!map || selectedIdRef.current) return;
 
     const currentCenter = map.getCenter();
 
@@ -90,18 +112,15 @@ export default function MyMap({
     });
 
     map.once("moveend", () => {
-      if (!isUserInteracting.current && !selectedId) {
-        startSpinning(); // Use the safe starter
+      if (!isUserInteracting.current && !selectedIdRef.current) {
+        startSpinning();
       }
     });
-  }, [selectedId, startSpinning]);
-
-  // -- 4. Interaction Handlers --
+  }, [startSpinning]);
 
   const onUserInteractionStart = useCallback(() => {
     isUserInteracting.current = true;
     stopSpinning();
-
     if (restartTimeoutId.current) {
       clearTimeout(restartTimeoutId.current);
       restartTimeoutId.current = null;
@@ -110,37 +129,76 @@ export default function MyMap({
 
   const onUserInteractionEnd = useCallback(() => {
     isUserInteracting.current = false;
-
-    if (selectedId) return;
+    if (selectedIdRef.current) return;
 
     if (restartTimeoutId.current) clearTimeout(restartTimeoutId.current);
 
     restartTimeoutId.current = setTimeout(() => {
       returnToAutoRotate();
     }, AUTO_SPIN_DELAY);
-  }, [selectedId, returnToAutoRotate]);
+  }, [returnToAutoRotate]);
+
+  // -- 4. Custom: Apply Land Color on Load & Start Spinning --
+  const onMapLoad = useCallback(
+    (event: any) => {
+      // 1. Get the raw map instance from the event
+      const map = event.target;
+
+      // 2. The standard Mapbox Light style uses a layer named "background" for the land/ocean base.
+      if (LANDMASS_COLOR && WATERMASS_COLOR) {
+        map.setPaintProperty("land", "background-color", LANDMASS_COLOR);
+        map.setPaintProperty("water", "fill-color", WATERMASS_COLOR);
+      }
+
+      // 3. Start spinning on load if no item is selected
+      if (!selectedIdRef.current) {
+        startSpinning();
+      }
+    },
+    [startSpinning],
+  );
 
   // -- 5. Effects --
-
-  // Initial Start
+  // Cleanup on unmount
   useEffect(() => {
-    startSpinning(); // Use the safe starter
     return () => {
       stopSpinning();
       if (restartTimeoutId.current) clearTimeout(restartTimeoutId.current);
     };
-  }, [startSpinning, stopSpinning]);
+  }, [stopSpinning]);
 
-  // Handle Selection Changes
   useEffect(() => {
     if (selectedId) {
       stopSpinning();
       if (restartTimeoutId.current) clearTimeout(restartTimeoutId.current);
     } else {
-      // If we deselected, trigger the return sequence
       onUserInteractionEnd();
     }
   }, [selectedId, stopSpinning, onUserInteractionEnd]);
+
+  // -- 6. The Cinematic Click Fix --
+  const onClick = useCallback(
+    (event: MapLayerMouseEvent) => {
+      const { features } = event;
+      if (features && features[0] && features[0].properties?.id) {
+        stopSpinning();
+        mapRef.current?.stop();
+
+        onPinClick(String(features[0].properties.id));
+
+        const [lng, lat] = (features[0].geometry as Point).coordinates;
+
+        mapRef.current?.flyTo({
+          center: [lng, lat],
+          zoom: 11,
+          pitch: 50,
+          duration: 6000,
+          essential: true,
+        });
+      }
+    },
+    [onPinClick, stopSpinning],
+  );
 
   // -- GeoJSON & Render Logic --
   const geoJsonData: FeatureCollection = useMemo(
@@ -160,29 +218,6 @@ export default function MyMap({
     [applications],
   );
 
-  const onMouseMove = useCallback((event: MapLayerMouseEvent) => {
-    const { features } = event;
-    setHoveredId(features && features[0] ? features[0].properties?.id : null);
-  }, []);
-
-  const onClick = useCallback(
-    (event: MapLayerMouseEvent) => {
-      const { features } = event;
-      if (features && features[0] && features[0].properties?.id) {
-        onPinClick(String(features[0].properties.id));
-
-        const [lng, lat] = (features[0].geometry as Point).coordinates;
-        mapRef.current?.flyTo({
-          center: [lng, lat],
-          zoom: 14,
-          duration: 2000,
-          essential: true,
-        });
-      }
-    },
-    [onPinClick],
-  );
-
   const layerStyle: LayerProps = useMemo(() => {
     const isHighlighted = [
       "any",
@@ -193,13 +228,27 @@ export default function MyMap({
       id: "point",
       type: "circle",
       paint: {
-        "circle-radius": ["case", isHighlighted, 9, 6],
+        "circle-radius": ["case", isHighlighted, PIN_SIZE_HIGHLIGHT, PIN_SIZE],
         "circle-color": ["case", isHighlighted, "#be123c", "#E11D48"],
         "circle-stroke-width": 1.5,
         "circle-stroke-color": "#ffffff",
       },
     };
   }, [hoveredId, selectedId]);
+
+  const onMouseMove = useCallback((event: MapLayerMouseEvent) => {
+    const { features } = event;
+    setHoveredId(features && features[0] ? features[0].properties?.id : null);
+  }, []);
+
+  // -- Zoom Change Handler --
+  const onZoom = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || !onZoomChange) return;
+    const zoom = map.getZoom();
+    // Consider "at zoom zero" only when zoom is essentially 0
+    onZoomChange(zoom < 0.05);
+  }, [onZoomChange]);
 
   return (
     <div
@@ -232,6 +281,7 @@ export default function MyMap({
           projection="globe"
           mapStyle="mapbox://styles/mapbox/light-v11"
           interactiveLayerIds={["point"]}
+          onLoad={onMapLoad}
           onMouseMove={onMouseMove}
           onMouseLeave={() => setHoveredId(null)}
           onClick={onClick}
@@ -244,10 +294,19 @@ export default function MyMap({
           onTouchEnd={onUserInteractionEnd}
           onDragEnd={onUserInteractionEnd}
           onZoomEnd={onUserInteractionEnd}
+          onZoom={onZoom}
           onRotateEnd={onUserInteractionEnd}
           cursor={hoveredId ? "pointer" : "auto"}
           style={{ width: "100%", height: "100%" }}
         >
+          {/* Order matters: Bottom layers first */}
+          <Layer {...greenSpacesLayer} />
+          <Layer {...countryBordersLayer} />
+          <Layer {...majorRoadsLayer} />
+          <Layer {...secondaryRoadsLayer} />
+          <Layer {...buildingLayer} />
+          <Layer {...majorCitiesLayer} />
+
           <Source id="my-data" type="geojson" data={geoJsonData}>
             <Layer {...layerStyle} />
           </Source>
