@@ -10,11 +10,12 @@ import {
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { jobsApi } from "@/api/client";
 import type { Application } from "@/types/application";
-
-// Virtual scrolling configuration
-const INITIAL_RENDER_COUNT = 15; // Number of items to render initially
-const RENDER_BUFFER = 10; // Number of items to render beyond visible area when scrolling
-const SCROLL_THRESHOLD = 200; // Pixels from bottom to trigger loading more
+import {
+  CenteredBox,
+  CardWithOptionalShadow,
+  MyScrollableSection,
+  Navbar,
+} from "../shared";
 
 // Generate heatmap data from applications
 function generateHeatmapData(applications: Application[]) {
@@ -46,12 +47,15 @@ export default function HomePage() {
     eligibility: "eligible" as "eligible" | "all" | "non-eligible",
   });
   const [isScrolled, setIsScrolled] = useState(false);
+  const [renderedCount, setRenderedCount] = useState(15);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const [renderedCount, setRenderedCount] = useState(INITIAL_RENDER_COUNT);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const DESCRIPTION_CHAR_LIMIT = 80;
+  const INITIAL_RENDER_COUNT = 15;
+  const RENDER_BUFFER = 10;
+  const SCROLL_THRESHOLD = 200;
 
   const handleHeatmapCellClick = (date: string) => {
     navigate(`/report/${date}`);
@@ -99,7 +103,10 @@ export default function HomePage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      const isTyping = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+      const isTyping =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
 
       // "/" key (only when not typing)
       if (e.key === "/" && !isTyping) {
@@ -146,38 +153,46 @@ export default function HomePage() {
         (filters.eligibility === "non-eligible" && !isEligible);
 
       return (
-        matchesSearch && matchesStatus && matchesMinMatch && matchesLocation && matchesEligibility
+        matchesSearch &&
+        matchesStatus &&
+        matchesMinMatch &&
+        matchesLocation &&
+        matchesEligibility
       );
     });
   }, [applications, searchQuery, filters]);
 
-  // Reset rendered count when filters/search change
+  // Reset rendered count and scroll position when filters/search change
   useEffect(() => {
     setRenderedCount(INITIAL_RENDER_COUNT);
-    // Also scroll to top when filters change
     scrollContainerRef.current?.scrollTo(0, 0);
+    setIsScrolled(false);
   }, [searchQuery, filters]);
+
+  // Handle scroll events
+  const handleScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const target = e.currentTarget;
+      setIsScrolled(target.scrollTop > 0);
+
+      // Check if we're near the bottom to load more items
+      const distanceFromBottom =
+        target.scrollHeight - target.scrollTop - target.clientHeight;
+      if (distanceFromBottom < SCROLL_THRESHOLD) {
+        setRenderedCount((prev) => {
+          const next = prev + RENDER_BUFFER;
+          return Math.min(next, filteredApplications.length);
+        });
+      }
+    },
+    [filteredApplications.length],
+  );
 
   // Virtual scrolling: only render a subset of filtered applications
   const visibleApplications = useMemo(
     () => filteredApplications.slice(0, renderedCount),
-    [filteredApplications, renderedCount]
+    [filteredApplications, renderedCount],
   );
-
-  // Handle scroll to load more items
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    setIsScrolled(target.scrollTop > 0);
-
-    // Check if we're near the bottom
-    const distanceFromBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
-    if (distanceFromBottom < SCROLL_THRESHOLD) {
-      setRenderedCount((prev) => {
-        const next = prev + RENDER_BUFFER;
-        return Math.min(next, filteredApplications.length);
-      });
-    }
-  }, [filteredApplications.length]);
 
   // Generate heatmap data based on filtered results
   const heatmapData = useMemo(
@@ -187,19 +202,20 @@ export default function HomePage() {
 
   const uniqueStatuses = useMemo(
     () => [...new Set(applications.map((app) => app.status))],
-    [applications]
+    [applications],
   );
   const uniqueLocations = useMemo(
     () => [
       ...new Set(
         applications.map((app) => {
           if (app.location.toLowerCase().includes("remote")) return "Remote";
-          if (app.location.toLowerCase().includes("contract")) return "Contract";
+          if (app.location.toLowerCase().includes("contract"))
+            return "Contract";
           return app.location.split(",")[0].split("(")[0].trim();
         }),
       ),
     ],
-    [applications]
+    [applications],
   );
 
   if (loading) {
@@ -241,41 +257,25 @@ export default function HomePage() {
       {/* Fixed Top Section */}
       <div className="shrink-0 bg-card z-10">
         {/* Navigation */}
-        <nav>
-          <div className="max-w-225 mx-auto px-6 py-2.5 flex items-center justify-between border-x border-b border-border">
-            <button
-              type="button"
-              className="font-mono text-[0.75rem] text-muted-foreground uppercase tracking-wide
-                       border border-border bg-card px-3 py-1.5
-                       transition-all duration-200
-                       hover:shadow-[1px_1px_0px_#2b2b2b]
-                       focus:outline-none focus:shadow-[2px_2px_0px_#2b2b2b]"
-            >
-              <LogOut className="inline-block w-3.5 h-3.5 mr-1.5 -mt-0.5" />
-              Log Out
-            </button>
-
-            <a
-              href="/report"
-              className="bg-primary text-primary-foreground px-4 py-1.5 uppercase font-bold text-[0.75rem] tracking-wider font-sans
-                       transition-all duration-200
-                       hover:shadow-[1px_1px_0px_#2b2b2b]
-                       focus:outline-none focus:shadow-[2px_2px_0px_#2b2b2b]"
-            >
-              Daily Report
-            </a>
-          </div>
-        </nav>
+        <Navbar link="/report" text="Daily Report" />
 
         {/* Header + Heatmap + Search in one unified block */}
-        <div className="max-w-225 mx-auto border-x border-border">
+        <CenteredBox>
           {/* Header */}
           <header className="text-center p-6 pb-9">
             <h1 className="font-serif font-bold uppercase tracking-[-0.5px] text-[1.75rem] sm:text-[2rem] mb-1">
               The Daily Application
             </h1>
             <div className="font-mono text-[0.7rem] text-muted-foreground uppercase tracking-wide">
-              {filteredApplications.length} Applications • Jan 2026
+              {filteredApplications.length}{" "}
+              {searchQuery ||
+              filters.status !== "all" ||
+              filters.minMatch !== 0 ||
+              filters.location !== "all" ||
+              filters.eligibility !== "eligible"
+                ? "Search Results"
+                : "Applications"}{" "}
+              • Jan 2026
             </div>
           </header>
 
@@ -308,7 +308,7 @@ export default function HomePage() {
           </div>
 
           {/* Search + Filters */}
-          <div className={`px-6 py-3 border-b border-border flex items-center gap-3 transition-shadow duration-200 [clip-path:inset(0_0_-10px_0)] ${isScrolled ? "shadow-[0_4px_8px_-2px_rgba(0,0,0,0.08)]" : ""}`}>
+          <CardWithOptionalShadow showShadow={isScrolled}>
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
@@ -324,7 +324,6 @@ export default function HomePage() {
                          placeholder:text-muted-foreground"
               />
             </div>
-
             <Popover>
               <PopoverTrigger asChild>
                 <button
@@ -433,7 +432,8 @@ export default function HomePage() {
                     >
                       {filters.eligibility === "eligible" && "Eligible Only"}
                       {filters.eligibility === "all" && "All Jobs"}
-                      {filters.eligibility === "non-eligible" && "Non-Eligible Only"}
+                      {filters.eligibility === "non-eligible" &&
+                        "Non-Eligible Only"}
                     </button>
                   </div>
 
@@ -455,114 +455,107 @@ export default function HomePage() {
                 </div>
               </PopoverContent>
             </Popover>
-          </div>
-
-        </div>
+          </CardWithOptionalShadow>
+        </CenteredBox>
       </div>
 
       {/* Scrollable Results Section */}
-      <div
-        ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto"
-        onScroll={handleScroll}
-      >
-        <div className="max-w-[900px] mx-auto bg-card border-x border-border">
-          <div className="divide-y divide-border">
-            {filteredApplications.length === 0 ? (
-              <div className="px-6 py-12 text-center">
-                <p className="font-mono text-muted-foreground text-sm">
-                  No applications found matching your criteria.
-                </p>
-              </div>
-            ) : (
-              visibleApplications.map((app) => {
-                const isExpanded = expandedIds.has(app.id);
-                const isTruncated = app.description.length > DESCRIPTION_CHAR_LIMIT;
-                const displayText = isExpanded || !isTruncated
-                  ? app.description
-                  : app.description.slice(0, DESCRIPTION_CHAR_LIMIT);
-
-                return (
-                  <article
-                    key={app.id}
-                    onClick={() => handleApplicationClick(app)}
-                    className="px-6 py-4 transition-all duration-200 hover:bg-accent cursor-pointer group"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <span className="font-mono text-[0.7rem] text-muted-foreground uppercase block mb-1">
-                          {app.location}
-                          {app.salary?.displayValue &&
-                            app.salary.displayValue.toLowerCase() !== "not specified" && (
-                              <> • {app.salary.displayValue}</>
-                            )}
-                        </span>
-                        <h3 className="font-serif font-bold text-lg leading-tight mb-1 group-hover:underline underline-offset-2">
-                          {app.role}
-                        </h3>
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="inline-block bg-primary text-primary-foreground px-1.5 py-0.5 text-[0.65rem] font-sans uppercase">
-                            {app.company}
-                          </span>
-                          <span
-                            className={`font-bold text-[0.8rem] ${app.match >= 90 ? "text-[#1a7f37]" : app.match >= 80 ? "text-[#d2a106]" : "text-muted-foreground"}`}
-                          >
-                            {app.match}% Match
-                          </span>
-                        </div>
-                        <p
-                          onClick={(e) => {
-                            if (isTruncated) {
-                              e.stopPropagation();
-                              toggleDescriptionExpanded(app.id);
-                            }
-                          }}
-                          className={`text-[0.9rem] text-muted-foreground leading-snug ${isTruncated && !isExpanded ? "cursor-pointer" : ""}`}
-                        >
-                          {displayText}
-                          {isTruncated && !isExpanded && (
-                            <span className="text-[#666] italic"> ...read more</span>
-                          )}
-                          {isTruncated && isExpanded && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleDescriptionExpanded(app.id);
-                              }}
-                              className="text-[#666] italic ml-1 hover:underline"
-                            >
-                              show less
-                            </button>
-                          )}
-                        </p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span className="font-mono text-[0.65rem] text-muted-foreground uppercase block mb-1">
-                          {app.date}
-                        </span>
-                        <span className="inline-block border border-border px-2 py-0.5 text-[0.65rem] font-sans uppercase">
-                          {app.status}
-                        </span>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })
-            )}
-            {/* Loading indicator when more items are available */}
-            {visibleApplications.length < filteredApplications.length && (
-              <div className="px-6 py-4 text-center">
-                <p className="font-mono text-muted-foreground text-xs">
-                  Showing {visibleApplications.length} of {filteredApplications.length} applications — scroll for more
-                </p>
-              </div>
-            )}
+      <MyScrollableSection ref={scrollContainerRef} onScroll={handleScroll}>
+        {filteredApplications.length === 0 ? (
+          <div className="px-6 py-12 text-center">
+            <p className="font-mono text-muted-foreground text-sm">
+              No applications found matching your criteria.
+            </p>
           </div>
-        </div>
-      </div>
+        ) : (
+          visibleApplications.map((app) => {
+            const isExpanded = expandedIds.has(app.id);
+            const isTruncated = app.description.length > DESCRIPTION_CHAR_LIMIT;
+            const displayText =
+              isExpanded || !isTruncated
+                ? app.description
+                : app.description.slice(0, DESCRIPTION_CHAR_LIMIT);
+
+            return (
+              <article
+                key={app.id}
+                onClick={() => handleApplicationClick(app)}
+                className="px-6 py-4 transition-all duration-200 hover:bg-accent cursor-pointer group"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <span className="font-mono text-[0.7rem] text-muted-foreground uppercase block mb-1">
+                      {app.location}
+                      {app.salary?.displayValue &&
+                        app.salary.displayValue.toLowerCase() !==
+                          "not specified" && <> • {app.salary.displayValue}</>}
+                    </span>
+                    <h3 className="font-serif font-bold text-lg leading-tight mb-1 group-hover:underline underline-offset-2">
+                      {app.role}
+                    </h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="inline-block bg-primary text-primary-foreground px-1.5 py-0.5 text-[0.65rem] font-sans uppercase">
+                        {app.company}
+                      </span>
+                      <span
+                        className={`font-bold text-[0.8rem] ${app.match >= 90 ? "text-[#1a7f37]" : app.match >= 80 ? "text-[#d2a106]" : "text-muted-foreground"}`}
+                      >
+                        {app.match}% Match
+                      </span>
+                    </div>
+                    <p
+                      onClick={(e) => {
+                        if (isTruncated) {
+                          e.stopPropagation();
+                          toggleDescriptionExpanded(app.id);
+                        }
+                      }}
+                      className={`text-[0.9rem] text-muted-foreground leading-snug ${isTruncated && !isExpanded ? "cursor-pointer" : ""}`}
+                    >
+                      {displayText}
+                      {isTruncated && !isExpanded && (
+                        <span className="text-[#666] italic">
+                          {" "}
+                          ...read more
+                        </span>
+                      )}
+                      {isTruncated && isExpanded && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleDescriptionExpanded(app.id);
+                          }}
+                          className="text-[#666] italic ml-1 hover:underline"
+                        >
+                          show less
+                        </button>
+                      )}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="font-mono text-[0.65rem] text-muted-foreground uppercase block mb-1">
+                      {app.date}
+                    </span>
+                    <span className="inline-block border border-border px-2 py-0.5 text-[0.65rem] font-sans uppercase">
+                      {app.status}
+                    </span>
+                  </div>
+                </div>
+              </article>
+            );
+          })
+        )}
+        {/* Loading indicator when more items are available */}
+        {visibleApplications.length < filteredApplications.length && (
+          <div className="px-6 py-4 text-center">
+            <p className="font-mono text-muted-foreground text-xs">
+              Showing {visibleApplications.length} of{" "}
+              {filteredApplications.length} applications — scroll for more
+            </p>
+          </div>
+        )}
+      </MyScrollableSection>
     </div>
   );
 }
-
-

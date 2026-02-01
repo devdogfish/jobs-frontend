@@ -3,7 +3,7 @@ import { Newspaper } from "./Newspaper";
 import { jobsApi } from "../../api/client";
 import type { Application } from "@/types/application";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { getTodayISOString } from "@/utils";
+import { getTodayISOString } from "@/lib/utils";
 
 export function ReportPage() {
   const [applications, setApplications] = useState<Application[]>([]);

@@ -4,7 +4,7 @@ import { Layout } from "./components/layout";
 import { ReportPage } from "./components/report/page";
 import AuthPage from "./components/auth/page";
 import HomePage from "./components/home/page";
-import { getTodayISOString } from "./utils";
+import { getTodayISOString } from "./lib/utils";
 
 function ReportRedirect() {
   return <Navigate to={`/report/${getTodayISOString()}`} replace />;

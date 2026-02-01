@@ -66,9 +66,7 @@ export const authApi = {
 
 export const jobsApi = {
   getJobs: async (date?: string): Promise<ApiResponse<Application[]>> => {
-    const endpoint = date
-      ? `/jobs?date=${encodeURIComponent(date)}`
-      : "/jobs";
+    const endpoint = date ? `/jobs?date=${encodeURIComponent(date)}` : "/jobs";
 
     const url = `${API_BASE}${endpoint}`;
 
@@ -96,6 +94,7 @@ export const jobsApi = {
       }
 
       const json = await response.json();
+
       return { data: json.applications };
     } catch (err) {
       return { error: err instanceof Error ? err.message : "Network error" };
