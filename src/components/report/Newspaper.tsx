@@ -9,9 +9,10 @@ import { MyScrollableSection, Navbar } from "../shared";
 interface NewspaperProps {
   applications: Application[];
   date?: string;
+  backUrl?: string;
 }
 
-export function Newspaper({ applications, date }: NewspaperProps) {
+export function Newspaper({ applications, date, backUrl = "/" }: NewspaperProps) {
   const [isScrolled, setIsScrolled] = useState(false);
 
   const reportDate = date || new Date().toISOString().split("T")[0];
@@ -30,7 +31,7 @@ export function Newspaper({ applications, date }: NewspaperProps) {
     <div className="h-screen bg-background text-foreground font-sans leading-relaxed flex flex-col overflow-hidden">
       {/* Fixed Top Section */}
       <div className="shrink-0 bg-card z-10">
-        <Navbar link="/" text="Home" withShadow={isScrolled} />
+        <Navbar link={backUrl} text="Home" withShadow={isScrolled} />
       </div>
       <div className="flex-1 flex flex-col overflow-hidden">
         <MyScrollableSection onScroll={handleScroll}>

@@ -192,10 +192,22 @@ export default function MyMap({
     if (selectedId) {
       stopSpinning();
       if (restartTimeoutId.current) clearTimeout(restartTimeoutId.current);
+
+      // Find the selected application and fly to it
+      const selectedApp = applications.find((app) => app.id === selectedId);
+      if (selectedApp?.latitude && selectedApp?.longitude) {
+        mapRef.current?.flyTo({
+          center: [selectedApp.longitude, selectedApp.latitude],
+          zoom: 11,
+          pitch: 50,
+          duration: 6000,
+          essential: true,
+        });
+      }
     } else {
       onUserInteractionEnd();
     }
-  }, [selectedId, stopSpinning, onUserInteractionEnd]);
+  }, [selectedId, applications, stopSpinning, onUserInteractionEnd]);
 
   // -- 6. The Cinematic Click Fix --
   const onClick = useCallback(
@@ -279,9 +291,34 @@ export default function MyMap({
         overflow: "hidden",
         position: "relative",
       }}
-
     >
-      <div
+      <Map
+        ref={mapRef}
+        mapboxAccessToken={token}
+        initialViewState={{
+          longitude: -50,
+          latitude: 20,
+          zoom: 0,
+        }}
+        projection="globe"
+        mapStyle="mapbox://styles/mapbox/light-v11"
+        interactiveLayerIds={["point"]}
+        onLoad={onMapLoad}
+        onMouseMove={onMouseMove}
+        onMouseLeave={() => setHoveredId(null)}
+        onClick={onClick}
+        onMouseDown={onUserInteractionStart}
+        onTouchStart={onUserInteractionStart}
+        onWheel={onUserInteractionStart}
+        onDragStart={onUserInteractionStart}
+        onRotateStart={onUserInteractionStart}
+        onMouseUp={onUserInteractionEnd}
+        onTouchEnd={onUserInteractionEnd}
+        onDragEnd={onUserInteractionEnd}
+        onZoomEnd={onUserInteractionEnd}
+        onZoom={onZoom}
+        onRotateEnd={onUserInteractionEnd}
+        cursor={hoveredId ? "pointer" : "auto"}
         style={{
           width: MAP_SIZE,
           height: MAP_SIZE,
@@ -291,50 +328,19 @@ export default function MyMap({
           transform: `scale(${1 / WORLD_SCALE})`,
           transformOrigin: "center center",
         }}
-        // className="bg-pink-300"
       >
-        <Map
-          ref={mapRef}
-          mapboxAccessToken={token}
-          initialViewState={{
-            longitude: -50,
-            latitude: 20,
-            zoom: 0,
-          }}
-          projection="globe"
-          mapStyle="mapbox://styles/mapbox/light-v11"
-          interactiveLayerIds={["point"]}
-          onLoad={onMapLoad}
-          onMouseMove={onMouseMove}
-          onMouseLeave={() => setHoveredId(null)}
-          onClick={onClick}
-          onMouseDown={onUserInteractionStart}
-          onTouchStart={onUserInteractionStart}
-          onWheel={onUserInteractionStart}
-          onDragStart={onUserInteractionStart}
-          onRotateStart={onUserInteractionStart}
-          onMouseUp={onUserInteractionEnd}
-          onTouchEnd={onUserInteractionEnd}
-          onDragEnd={onUserInteractionEnd}
-          onZoomEnd={onUserInteractionEnd}
-          onZoom={onZoom}
-          onRotateEnd={onUserInteractionEnd}
-          cursor={hoveredId ? "pointer" : "auto"}
-          style={{ width: "100%", height: "100%" }}
-        >
-          {/* Order matters: Bottom layers first */}
-          <Layer {...greenSpacesLayer} />
-          <Layer {...countryBordersLayer} />
-          <Layer {...majorRoadsLayer} />
-          <Layer {...secondaryRoadsLayer} />
-          <Layer {...buildingLayer} />
-          <Layer {...majorCitiesLayer} />
+        {/* Order matters: Bottom layers first */}
+        <Layer {...greenSpacesLayer} />
+        <Layer {...countryBordersLayer} />
+        <Layer {...majorRoadsLayer} />
+        <Layer {...secondaryRoadsLayer} />
+        <Layer {...buildingLayer} />
+        <Layer {...majorCitiesLayer} />
 
-          <Source id="my-data" type="geojson" data={geoJsonData}>
-            <Layer {...layerStyle} />
-          </Source>
-        </Map>
-      </div>
+        <Source id="my-data" type="geojson" data={geoJsonData}>
+          <Layer {...layerStyle} />
+        </Source>
+      </Map>
     </div>
   );
 }

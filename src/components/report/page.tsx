@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Newspaper } from "./Newspaper";
 import { jobsApi } from "../../lib/api";
 import type { Application } from "@/types/application";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { getTodayISOString } from "@/lib/utils";
 
 export function ReportPage() {
@@ -12,7 +12,11 @@ export function ReportPage() {
 
   const { date: dateParam } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const todayISO = getTodayISOString();
+
+  // Get back URL from search params, default to "/"
+  const backUrl = searchParams.get("backUrl") || "/";
 
   useEffect(() => {
     async function fetchJobs() {
@@ -21,10 +25,16 @@ export function ReportPage() {
 
       const response = await jobsApi.getJobs(dateParam ?? undefined);
 
+      // Preserve backUrl in redirects
+      const backUrlParam = searchParams.get("backUrl");
+      const redirectUrl = backUrlParam
+        ? `/report/${todayISO}?backUrl=${encodeURIComponent(backUrlParam)}`
+        : `/report/${todayISO}`;
+
       if (response.error) {
         // If there's an error and we're not on today's date, redirect to today
         if (dateParam && dateParam !== todayISO) {
-          navigate(`/report/${todayISO}`, { replace: true });
+          navigate(redirectUrl, { replace: true });
           return;
         }
         setError(response.error);
@@ -36,7 +46,7 @@ export function ReportPage() {
         // No data returned or empty array
         if (dateParam && dateParam !== todayISO) {
           // Not today's date and no data - redirect to today
-          navigate(`/report/${todayISO}`, { replace: true });
+          navigate(redirectUrl, { replace: true });
           return;
         }
         // Today's date but no data
@@ -47,7 +57,7 @@ export function ReportPage() {
     }
 
     fetchJobs();
-  }, [dateParam, navigate, todayISO]);
+  }, [dateParam, navigate, todayISO, searchParams]);
 
   if (loading) {
     return (
@@ -94,7 +104,7 @@ export function ReportPage() {
             There are no job applications recorded for {dateParam || todayISO}.
           </div>
           <Link
-            to="/"
+            to={backUrl}
             className="inline-block px-6 py-2 bg-[#1a1a1a] text-[#fdf6e3] font-serif hover:bg-[#333] transition-colors"
           >
             Back to Home
@@ -104,5 +114,11 @@ export function ReportPage() {
     );
   }
 
-  return <Newspaper applications={applications} date={dateParam || todayISO} />;
+  return (
+    <Newspaper
+      applications={applications}
+      date={dateParam || todayISO}
+      backUrl={backUrl}
+    />
+  );
 }

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import GitHubHeatmap from "@/components/home/github-heatmap";
 import { Search, SlidersHorizontal } from "lucide-react";
 import {
@@ -38,19 +38,26 @@ function generateHeatmapData(applications: Application[]) {
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Initialize state from URL search params
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState({
-    status: "all",
-    minMatch: 0,
-    location: "all",
-    eligibility: "eligible" as "eligible" | "all" | "non-eligible",
-  });
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get("q") || "",
+  );
+  const [filters, setFilters] = useState(() => ({
+    status: searchParams.get("status") || "all",
+    minMatch: Number(searchParams.get("minMatch")) || 0,
+    location: searchParams.get("location") || "all",
+    eligibility: (searchParams.get("eligibility") || "eligible") as
+      | "eligible"
+      | "all"
+      | "non-eligible",
+  }));
   const [isScrolled, setIsScrolled] = useState(false);
   const [renderedCount, setRenderedCount] = useState(15);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -63,23 +70,30 @@ export default function HomePage() {
   const [showMapboxBorder, setShowMapboxBorder] = useState(false);
 
   const handleHeatmapCellClick = (date: string) => {
-    navigate(`/report/${date}`);
-  };
-
-  const toggleDescriptionExpanded = (id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+    // Build back URL with current search params
+    const currentParams = searchParams.toString();
+    const backUrl = currentParams ? `/?${currentParams}` : "/";
+    navigate(`/report/${date}?backUrl=${encodeURIComponent(backUrl)}`);
   };
 
   const handleApplicationClick = (app: Application) => {
-    setSelectedId(app.id);
+    if (selectedId === app.id) {
+      // Deselect if clicking already-selected item
+      setSelectedId(null);
+    } else {
+      // Select and scroll into view
+      setSelectedId(app.id);
+
+      setTimeout(() => {
+        const element = document.getElementById(`job-card-${app.id}`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 100);
+    }
+  };
+
+  const handleApplicationDoubleClick = (app: Application) => {
     window.open(app.href, "_blank");
   };
 
@@ -105,7 +119,7 @@ export default function HomePage() {
     searchInputRef.current?.focus();
   }, []);
 
-  // Keyboard shortcuts to focus search input
+  // Keyboard shortcuts to focus search input and deselect with Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -113,6 +127,12 @@ export default function HomePage() {
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
         target.isContentEditable;
+
+      // Escape key to deselect
+      if (e.key === "Escape" && selectedId) {
+        setSelectedId(null);
+        return;
+      }
 
       // "/" key (only when not typing)
       if (e.key === "/" && !isTyping) {
@@ -130,7 +150,21 @@ export default function HomePage() {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [selectedId]);
+
+  // Sync search state to URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (searchQuery) params.set("q", searchQuery);
+    if (filters.status !== "all") params.set("status", filters.status);
+    if (filters.minMatch > 0) params.set("minMatch", String(filters.minMatch));
+    if (filters.location !== "all") params.set("location", filters.location);
+    if (filters.eligibility !== "eligible")
+      params.set("eligibility", filters.eligibility);
+
+    setSearchParams(params, { replace: true });
+  }, [searchQuery, filters, setSearchParams]);
 
   // Filter applications
   const filteredApplications = useMemo(() => {
@@ -139,6 +173,7 @@ export default function HomePage() {
         searchQuery === "" ||
         app.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
         app.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        app.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
         app.tags.some((tag) =>
           tag.toLowerCase().includes(searchQuery.toLowerCase()),
         );
@@ -174,10 +209,7 @@ export default function HomePage() {
       // 1. Mark as selected so it keeps the hover style
       setSelectedId(id);
 
-      // 2. Expand the description if not already expanded
-      setExpandedIds((prev) => new Set(prev).add(id));
-
-      // 3. Find the index in filtered list to ensure it is rendered
+      // 2. Find the index in filtered list to ensure it is rendered
       const index = filteredApplications.findIndex((app) => app.id === id);
 
       if (index !== -1) {
@@ -186,7 +218,7 @@ export default function HomePage() {
           setRenderedCount(index + 5);
         }
 
-        // 4. Wait for render cycle to update DOM, then scroll
+        // 3. Wait for render cycle to update DOM, then scroll
         setTimeout(() => {
           const element = document.getElementById(`job-card-${id}`);
           if (element) {
@@ -302,7 +334,10 @@ export default function HomePage() {
       {/* Fixed Top Section */}
       <div className="shrink-0  z-10">
         {/* Navigation */}
-        <Navbar link="/report" text="Daily Report" />
+        <Navbar
+          link={`/report?backUrl=${encodeURIComponent(searchParams.toString() ? `/?${searchParams.toString()}` : "/")}`}
+          text="Daily Report"
+        />
 
         {/* Header + Heatmap + Search in one unified block */}
         <CenteredBox>
@@ -530,7 +565,7 @@ export default function HomePage() {
       </div>
 
       {/* Scrollable Results Section */}
-      <MyScrollableSection ref={scrollContainerRef} onScroll={handleScroll}>
+      <MyScrollableSection ref={scrollContainerRef} onScroll={handleScroll} className="">
         {filteredApplications.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <p className="font-mono text-muted-foreground text-sm">
@@ -540,18 +575,17 @@ export default function HomePage() {
         ) : (
           visibleApplications.map((app) => {
             const isSelected = app.id === selectedId;
-            const isExpanded = expandedIds.has(app.id);
             const isTruncated = app.description.length > DESCRIPTION_CHAR_LIMIT;
-            const displayText =
-              isExpanded || !isTruncated
-                ? app.description
-                : app.description.slice(0, DESCRIPTION_CHAR_LIMIT);
+            const displayText = isTruncated
+              ? app.description.slice(0, DESCRIPTION_CHAR_LIMIT)
+              : app.description;
 
             return (
               <article
                 key={app.id}
                 id={`job-card-${app.id}`}
                 onClick={() => handleApplicationClick(app)}
+                onDoubleClick={() => handleApplicationDoubleClick(app)}
                 className={`px-6 py-4 transition-all duration-200 cursor-pointer group ${
                   isSelected ? "bg-accent" : "hover:bg-accent"
                 }`}
@@ -577,33 +611,10 @@ export default function HomePage() {
                         {app.match}% Match
                       </span>
                     </div>
-                    <p
-                      onClick={(e) => {
-                        if (isTruncated) {
-                          e.stopPropagation();
-                          toggleDescriptionExpanded(app.id);
-                        }
-                      }}
-                      className={`text-[0.9rem] text-muted-foreground leading-snug ${isTruncated && !isExpanded ? "cursor-pointer" : ""}`}
-                    >
+                    <p className="text-[0.9rem] text-muted-foreground leading-snug">
                       {displayText}
-                      {isTruncated && !isExpanded && (
-                        <span className="text-[#666] italic">
-                          {" "}
-                          ...read more
-                        </span>
-                      )}
-                      {isTruncated && isExpanded && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleDescriptionExpanded(app.id);
-                          }}
-                          className="text-[#666] italic ml-1 hover:underline"
-                        >
-                          show less
-                        </button>
+                      {isTruncated && (
+                        <span className="text-[#666] italic">...</span>
                       )}
                     </p>
                   </div>

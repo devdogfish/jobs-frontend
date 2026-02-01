@@ -43,11 +43,12 @@ export const MyScrollableSection = React.forwardRef<
   {
     children: React.ReactNode;
     onScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
+    className?: string;
   }
->(({ children, onScroll }, ref) => {
+>(({ children, onScroll, className }, ref) => {
   return (
-    <div ref={ref} className="flex-1 overflow-y-auto" onScroll={onScroll}>
-      <div className="max-w-225 mx-auto bg-card border-x border-border">
+    <div ref={ref} className={cn("flex-1 overflow-y-auto", className)} onScroll={onScroll}>
+      <div className="max-w-225 mx-auto bg-card border-x border-border min-h-full">
         <div className="divide-y divide-border">{children}</div>
       </div>
     </div>
