@@ -77,7 +77,6 @@ export default function HomePage() {
   };
 
   const handleApplicationClick = (app: Application) => {
-    // Also select the item when clicked directly
     setSelectedId(app.id);
     window.open(app.href, "_blank");
   };
@@ -177,11 +176,7 @@ export default function HomePage() {
       setExpandedIds((prev) => new Set(prev).add(id));
 
       // 3. Find the index in filtered list to ensure it is rendered
-      const index = filteredApplications.findIndex((app) => {
-        console.log("APP.ID Type: ", typeof app.id);
-        console.log("ID Type: ", typeof id);
-        return app.id === id;
-      });
+      const index = filteredApplications.findIndex((app) => app.id === id);
 
       if (index !== -1) {
         // If the item is further down than what is currently rendered, expand the list
@@ -200,13 +195,14 @@ export default function HomePage() {
     },
     [filteredApplications, renderedCount],
   );
+
   // Reset rendered count and scroll position when filters/search change
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setRenderedCount(INITIAL_RENDER_COUNT);
     scrollContainerRef.current?.scrollTo(0, 0);
     setIsScrolled(false);
-    setSelectedId(null); // Clear selection on filter change
+    setSelectedId(null); // Deselect when filters change
   }, [searchQuery, filters]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -354,6 +350,7 @@ export default function HomePage() {
               <MyMap
                 applications={filteredApplications}
                 onPinClick={handlePinClick}
+                selectedId={selectedId}
               />
             </div>
           </div>
