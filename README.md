@@ -17,9 +17,9 @@ If you are developing a production application, we recommend updating the config
 
 ```js
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(["dist"]),
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     extends: [
       // Other configs...
 
@@ -34,40 +34,67 @@ export default defineConfig([
     ],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
         tsconfigRootDir: import.meta.dirname,
       },
       // other options...
     },
   },
-])
+]);
 ```
 
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
 ```js
 // eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+import reactX from "eslint-plugin-react-x";
+import reactDom from "eslint-plugin-react-dom";
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(["dist"]),
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ["**/*.{ts,tsx}"],
     extends: [
       // Other configs...
       // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
+      reactX.configs["recommended-typescript"],
       // Enable lint rules for React DOM
       reactDom.configs.recommended,
     ],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
         tsconfigRootDir: import.meta.dirname,
       },
       // other options...
     },
   },
-])
+]);
 ```
+
+# Fonts used in the app
+
+Font Family: Geist
+Type: Sans-serif
+Appearance: Clean, modern geometric sans-serif with excellent legibility
+Usage: Primary body text, form inputs, buttons, labels, and general UI elements. Default font for most content.
+────────────────────────────────────────
+Font Family: Playfair Display
+Type: Serif
+Appearance: Elegant high-contrast serif with distinctive style, reminiscent of traditional newspaper headlines
+Usage: Main headlines, page titles, newspaper masthead ("DAILY JOB REPORT"), error/loading messages, auth page text, and decorative headings for a classic
+editorial feel
+────────────────────────────────────────
+Font Family: Courier New / Geist Mono
+Type: Monospace
+Appearance: Fixed-width typewriter-style font with uniform character spacing
+Usage: Dates, timestamps, metadata labels (like "TODAY" or "ISSUE NO."), technical labels, code-like elements, and footer text. Adds a typewriter/newspaper
+dateline aesthetic
+Font Stack Details:
+
+- Sans: Geist, Geist Fallback
+- Serif: Playfair Display, Georgia, Times New Roman, serif
+- Mono: Courier New, Courier, Geist Mono, monospace
+
+The combination creates a newspaper-inspired design language: Playfair Display for elegant editorial headlines, Geist for readable modern body text, and
+Courier/Mono for technical newspaper metadata like dates and issue numbers.

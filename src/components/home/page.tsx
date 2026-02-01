@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import GitHubHeatmap from "@/components/home/github-heatmap";
-import { Search, SlidersHorizontal, LogOut } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -163,11 +163,16 @@ export default function HomePage() {
   }, [applications, searchQuery, filters]);
 
   // Reset rendered count and scroll position when filters/search change
+  // This is a legitimate use of setState in an effect - we're synchronizing UI state
+  // (virtual scrolling position) with filter changes. The effect won't cascade because
+  // we're not modifying the dependencies (searchQuery, filters) within the effect.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setRenderedCount(INITIAL_RENDER_COUNT);
     scrollContainerRef.current?.scrollTo(0, 0);
     setIsScrolled(false);
   }, [searchQuery, filters]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Handle scroll events
   const handleScroll = useCallback(
@@ -199,6 +204,12 @@ export default function HomePage() {
     () => generateHeatmapData(filteredApplications),
     [filteredApplications],
   );
+
+  // Calculate global max count from ALL applications (unfiltered) for consistent color scaling
+  const globalMaxCount = useMemo(() => {
+    const allHeatmapData = generateHeatmapData(applications);
+    return Math.max(...allHeatmapData.map((d) => d.count), 1);
+  }, [applications]);
 
   const uniqueStatuses = useMemo(
     () => [...new Set(applications.map((app) => app.status))],
@@ -280,11 +291,12 @@ export default function HomePage() {
           </header>
 
           {/* Heatmap section with info box */}
-          <div className="px-6 pb-3 border-b border-border flex gap-4 h-[142px]">
+          <div className="px-6 pb-3 border-b border-border flex gap-4 h-35.5">
             {/* Heatmap - horizontally scrollable with custom scrollbar, matches box height */}
-            <ScrollArea className="flex-1 min-w-0 h-full [&_[data-radix-scroll-area-viewport]>div]:!h-full [&_[data-radix-scroll-area-viewport]>div]:!block [&_[data-slot=scroll-area-scrollbar]]:absolute [&_[data-slot=scroll-area-scrollbar]]:top-0 [&_[data-slot=scroll-area-scrollbar]]:left-0 [&_[data-slot=scroll-area-scrollbar]]:right-0 [&_[data-slot=scroll-area-scrollbar]]:opacity-0 [&_[data-slot=scroll-area-scrollbar]]:hover:opacity-100 [&_[data-slot=scroll-area-scrollbar][data-state=visible]]:opacity-100 [&_[data-slot=scroll-area-scrollbar]]:transition-opacity">
+            <ScrollArea className="flex-1 min-w-0 h-full [&_[data-radix-scroll-area-viewport]>div]:h-full! [&_[data-radix-scroll-area-viewport]>div]:block! **:data-[slot=scroll-area-scrollbar]:absolute **:data-[slot=scroll-area-scrollbar]:top-0 **:data-[slot=scroll-area-scrollbar]:left-0 **:data-[slot=scroll-area-scrollbar]:right-0 **:data-[slot=scroll-area-scrollbar]:opacity-0 **:data-[slot=scroll-area-scrollbar]:hover:opacity-100 [&_[data-slot=scroll-area-scrollbar][data-state=visible]]:opacity-100 **:data-[slot=scroll-area-scrollbar]:transition-opacity">
               <GitHubHeatmap
                 data={heatmapData}
+                maxCount={globalMaxCount}
                 startYear={2026}
                 endYear={2026}
                 colors={["#ebedf0", "#d4d4d0", "#a8a8a0", "#666660", "#2b2b2b"]}
@@ -296,13 +308,13 @@ export default function HomePage() {
                   `${cell.count} application${cell.count !== 1 ? "s" : ""} on ${cell.date}`
                 }
                 onCellClick={handleHeatmapCellClick}
-                className="[&_.github-heatmap]:!p-0 [&_.heatmap-year]:!mb-0 [&_.heatmap-title]:hidden [&_.heatmap-legend]:!mt-2 [&_.heatmap-legend]:!mb-1 h-full"
+                className="[&_.github-heatmap]:p-0! [&_.heatmap-year]:mb-0! [&_.heatmap-title]:hidden [&_.heatmap-legend]:mt-2! [&_.heatmap-legend]:mb-1! h-full"
               />
               <ScrollBar orientation="horizontal" />
             </ScrollArea>
 
             {/* Info box - fixed square matching full heatmap height */}
-            <div className="flex-shrink-0 border border-border bg-card flex items-center justify-center font-mono text-sm text-muted-foreground w-[142px] h-full relative shadow-[-24px_0_20px_-4px_rgba(255,255,255,0.9)]">
+            <div className="shrink-0 border border-border bg-card flex items-center justify-center font-mono text-sm text-muted-foreground w-35.5 h-full relative shadow-[-24px_0_20px_-4px_rgba(255,255,255,0.9)]">
               Hello World
             </div>
           </div>

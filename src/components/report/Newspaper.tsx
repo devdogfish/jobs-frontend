@@ -1,17 +1,10 @@
-import { useCallback, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
 import type { Application } from "@/types/application";
 import { buildReport } from "@/lib/report";
 import { FeaturedMainCard } from "./FeaturedMainCard";
 import { FeaturedSideCard } from "./FeaturedSideCard";
 import { ListCard } from "./ListCard";
-import { LogoutButton } from "../auth/logout-button";
-import {
-  CardWithOptionalShadow,
-  CenteredBox,
-  MyScrollableSection,
-  Navbar,
-} from "../shared";
+import { MyScrollableSection, Navbar } from "../shared";
 
 interface NewspaperProps {
   applications: Application[];
