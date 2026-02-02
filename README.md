@@ -72,6 +72,16 @@ export default defineConfig([
 ]);
 ```
 
+# Progressive Loading
+
+The home page uses progressive loading for improved perceived performance:
+
+- **Immediate UI render** - Navbar, header, heatmap container, and search bar appear instantly
+- **Lazy-loaded Mapbox** - The map component is code-split via `React.lazy()` with its own `Suspense` boundary, allowing it to load independently and display its spinning globe animation before data arrives
+- **Inline loading states** - The results list shows a spinner while fetching data rather than blocking the entire page
+
+This pattern ensures users see a responsive UI immediately instead of a blank loading screen.
+
 # Fonts used in the app
 
 Font Family: Geist

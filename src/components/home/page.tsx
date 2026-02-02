@@ -1,4 +1,12 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+  Suspense,
+  lazy,
+} from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import GitHubHeatmap from "@/components/home/github-heatmap";
 import { Search, SlidersHorizontal } from "lucide-react";
@@ -16,8 +24,19 @@ import {
   MyScrollableSection,
   Navbar,
 } from "../shared";
-import MyMap from "./map";
 import { cn } from "@/lib/utils";
+
+// Lazy load the map component
+const MyMap = lazy(() => import("./map"));
+
+// Skeleton placeholder for map while loading
+function MapSkeleton() {
+  return (
+    <div className="w-full h-full bg-muted/30 animate-pulse flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+    </div>
+  );
+}
 
 // Generate heatmap data from applications
 function generateHeatmapData(applications: Application[]) {
@@ -306,21 +325,6 @@ export default function HomePage() {
     [applications],
   );
 
-  if (loading) {
-    return (
-      <div className="h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="font-serif text-2xl text-foreground mb-2">
-            Loading applications...
-          </div>
-          <div className="text-muted-foreground font-serif italic">
-            Fetching your job applications
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="h-screen bg-background flex items-center justify-center">
@@ -412,14 +416,16 @@ export default function HomePage() {
                 showMapboxBorder && " border-border",
               )}
             >
-              <MyMap
-                applications={filteredApplications}
-                onPinClick={handlePinClick}
-                selectedId={selectedId}
-                onZoomChange={(isAtZoomZero) =>
-                  setShowMapboxBorder(!isAtZoomZero)
-                }
-              />
+              <Suspense fallback={<MapSkeleton />}>
+                <MyMap
+                  applications={filteredApplications}
+                  onPinClick={handlePinClick}
+                  selectedId={selectedId}
+                  onZoomChange={(isAtZoomZero) =>
+                    setShowMapboxBorder(!isAtZoomZero)
+                  }
+                />
+              </Suspense>
             </div>
           </div>
 
@@ -577,7 +583,14 @@ export default function HomePage() {
 
       {/* Scrollable Results Section */}
       <MyScrollableSection ref={scrollContainerRef} onScroll={handleScroll} className="">
-        {filteredApplications.length === 0 ? (
+        {loading ? (
+          <div className="px-6 py-12 text-center">
+            <div className="inline-block w-5 h-5 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin mb-3" />
+            <p className="font-mono text-muted-foreground text-sm">
+              Loading applications...
+            </p>
+          </div>
+        ) : filteredApplications.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <p className="font-mono text-muted-foreground text-sm">
               No applications found matching your criteria.

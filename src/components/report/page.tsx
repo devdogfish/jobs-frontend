@@ -59,21 +59,6 @@ export function ReportPage() {
     fetchJobs();
   }, [dateParam, navigate, todayISO, searchParams]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#fdf6e3] flex items-center justify-center">
-        <div className="text-center">
-          <div className="font-serif text-2xl text-[#1a1a1a] mb-2">
-            Loading today's report...
-          </div>
-          <div className="text-[#666] font-serif italic">
-            Fetching the latest job applications
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="min-h-screen bg-[#fdf6e3] flex items-center justify-center">
@@ -93,7 +78,8 @@ export function ReportPage() {
     );
   }
 
-  if (applications.length === 0) {
+  // Only show empty state after loading completes with no data
+  if (!loading && applications.length === 0) {
     return (
       <div className="min-h-screen bg-[#fdf6e3] flex items-center justify-center">
         <div className="text-center max-w-md">
@@ -105,7 +91,7 @@ export function ReportPage() {
           </div>
           <Link
             to={backUrl}
-            className="inline-block px-6 py-2 bg-[#1a1a1a] text-[#fdf6e3] font-serif hover:bg-[#333] transition-colors"
+            className="inline-block px-6 py-2 bg-[#1a1a1a] text-[#fdf6e3] font-serif hover:bg-[#333] transition-colors cursor-default"
           >
             Back to Home
           </Link>
@@ -119,6 +105,7 @@ export function ReportPage() {
       applications={applications}
       date={dateParam || todayISO}
       backUrl={backUrl}
+      loading={loading}
     />
   );
 }

@@ -38,6 +38,13 @@ When updating components from old types:
 ## Data Validation Notes
 - **Heatmap date validation**: The `generateHeatmapData` function in `page.tsx` filters out applications with invalid dates (must match `YYYY-MM-DD` format). This prevents applications with missing/malformed dates from grouping together and inflating the max count, which would throw off the color scaling.
 
+## Progressive Loading Pattern
+The home page (`src/components/home/page.tsx`) uses progressive loading for better UX:
+- **No full-page loading block** - UI renders immediately with navbar, header, heatmap, and search bar visible
+- **Lazy-loaded Mapbox** - The map component is loaded via `React.lazy()` with its own `Suspense` boundary and `MapSkeleton` fallback
+- **Inline loading states** - The results list shows a loading indicator while data fetches, rather than blocking the whole page
+- This allows the map to load its chunk independently and display its default spinning animation before application data arrives
+
 ## Build & Dev Commands
 ```bash
 bun install      # Install dependencies

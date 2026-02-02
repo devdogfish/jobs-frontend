@@ -85,7 +85,7 @@ export function Navbar({
           </button>
           <a
             href={link}
-            className="bg-primary text-primary-foreground px-4 py-1.5 uppercase font-bold text-[0.75rem] tracking-wider font-sans
+            className="bg-primary text-primary-foreground px-4 py-1.5 uppercase font-bold text-[0.75rem] tracking-wider font-sans cursor-default
                        transition-all duration-200
                        hover:shadow-[1px_1px_0px_#2b2b2b]
                        focus:outline-none focus:shadow-[2px_2px_0px_#2b2b2b]"
