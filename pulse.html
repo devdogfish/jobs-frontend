@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        height: 100vh;
+        background: #f0f0f0;
+      }
+
+      .round-image {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        z-index: 1;
+        position: relative;
+      }
+
+      .pulse-container {
+        position: relative;
+      }
+
+      .pulse1,
+      .pulse2,
+      .pulse3 {
+        position: absolute;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        z-index: 0;
+        background: red;
+        animation: pulse 3s infinite;
+      }
+
+      .pulse2 {
+        animation-delay: 1s;
+      }
+
+      .pulse3 {
+        animation-delay: 2s;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          opacity: 1;
+        }
+
+        100% {
+          transform: scale(1.5);
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="pulse-container">
+      <div class="pulse1"></div>
+      <div class="pulse2"></div>
+      <div class="pulse3"></div>
+
+      <img class="round-image" src="images/kingfisher.jpg" alt="" />
+    </div>
+  </body>
+</html>

@@ -275,6 +275,111 @@ export default function MyMap({
     };
   }, [hoveredId, selectedId]);
 
+  // Pulse animation state
+  const [pulseState, setPulseState] = useState({ scale1: 1, scale2: 1, scale3: 1, opacity1: 1, opacity2: 1, opacity3: 1 });
+  const pulseAnimationRef = useRef<number | null>(null);
+
+  // Pulse animation effect
+  useEffect(() => {
+    if (!selectedId) {
+      if (pulseAnimationRef.current) {
+        cancelAnimationFrame(pulseAnimationRef.current);
+        pulseAnimationRef.current = null;
+      }
+      return;
+    }
+
+    const duration = 4000; // 4 seconds per cycle
+    const startTime = performance.now();
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+
+      // Each pulse is offset by ~1.33 seconds (evenly spaced in 4s cycle)
+      const animDuration = 1000; // Each pulse animation lasts 1 second
+
+      const time1 = elapsed % duration;
+      const time2 = (elapsed + 2667) % duration;
+      const time3 = (elapsed + 1333) % duration;
+
+      // Progress goes from 0 to 1 over animDuration, then stays at 1
+      const progress1 = Math.min(time1 / animDuration, 1);
+      const progress2 = Math.min(time2 / animDuration, 1);
+      const progress3 = Math.min(time3 / animDuration, 1);
+
+      // Scale from 1 to 2.5, opacity from 0.6 to 0
+      const scale1 = 1 + progress1 * 1.5;
+      const scale2 = 1 + progress2 * 1.5;
+      const scale3 = 1 + progress3 * 1.5;
+
+      const opacity1 = 0.6 * (1 - progress1);
+      const opacity2 = 0.6 * (1 - progress2);
+      const opacity3 = 0.6 * (1 - progress3);
+
+      setPulseState({ scale1, scale2, scale3, opacity1, opacity2, opacity3 });
+      pulseAnimationRef.current = requestAnimationFrame(animate);
+    };
+
+    pulseAnimationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (pulseAnimationRef.current) {
+        cancelAnimationFrame(pulseAnimationRef.current);
+      }
+    };
+  }, [selectedId]);
+
+  // GeoJSON for selected pin pulse
+  const selectedPinGeoJson: FeatureCollection = useMemo(() => {
+    if (!selectedId) return { type: "FeatureCollection", features: [] };
+    const selectedApp = applications.find((app) => app.id === selectedId);
+    if (!selectedApp?.longitude || !selectedApp?.latitude) {
+      return { type: "FeatureCollection", features: [] };
+    }
+    return {
+      type: "FeatureCollection",
+      features: [{
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [selectedApp.longitude, selectedApp.latitude],
+        },
+        properties: { id: selectedApp.id },
+      }],
+    };
+  }, [selectedId, applications]);
+
+  // Pulse layer styles
+  const pulseLayer1: LayerProps = useMemo(() => ({
+    id: "pulse-1",
+    type: "circle",
+    paint: {
+      "circle-radius": PIN_SIZE_HIGHLIGHT * pulseState.scale1,
+      "circle-color": "#E11D48",
+      "circle-opacity": pulseState.opacity1,
+    },
+  }), [pulseState.scale1, pulseState.opacity1]);
+
+  const pulseLayer2: LayerProps = useMemo(() => ({
+    id: "pulse-2",
+    type: "circle",
+    paint: {
+      "circle-radius": PIN_SIZE_HIGHLIGHT * pulseState.scale2,
+      "circle-color": "#E11D48",
+      "circle-opacity": pulseState.opacity2,
+    },
+  }), [pulseState.scale2, pulseState.opacity2]);
+
+  const pulseLayer3: LayerProps = useMemo(() => ({
+    id: "pulse-3",
+    type: "circle",
+    paint: {
+      "circle-radius": PIN_SIZE_HIGHLIGHT * pulseState.scale3,
+      "circle-color": "#E11D48",
+      "circle-opacity": pulseState.opacity3,
+    },
+  }), [pulseState.scale3, pulseState.opacity3]);
+
   const onMouseMove = useCallback((event: MapLayerMouseEvent) => {
     const { features } = event;
     setHoveredId(features && features[0] ? features[0].properties?.id : null);
@@ -342,6 +447,15 @@ export default function MyMap({
         <Layer {...secondaryRoadsLayer} />
         <Layer {...buildingLayer} />
         <Layer {...majorCitiesLayer} />
+
+        {/* Pulse layers for selected pin - rendered behind main pins */}
+        {selectedId && (
+          <Source id="pulse-data" type="geojson" data={selectedPinGeoJson}>
+            <Layer {...pulseLayer1} />
+            <Layer {...pulseLayer2} />
+            <Layer {...pulseLayer3} />
+          </Source>
+        )}
 
         <Source id="my-data" type="geojson" data={geoJsonData}>
           <Layer {...layerStyle} />
