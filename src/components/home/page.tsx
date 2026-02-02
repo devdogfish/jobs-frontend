@@ -62,6 +62,7 @@ export default function HomePage() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const DESCRIPTION_CHAR_LIMIT = 80;
   const INITIAL_RENDER_COUNT = 15;
@@ -94,8 +95,17 @@ export default function HomePage() {
     }
   };
 
-  const handleApplicationDoubleClick = (app: Application) => {
-    window.open(app.href, "_blank");
+  const handleHoldStart = (app: Application) => {
+    holdTimerRef.current = setTimeout(() => {
+      window.open(app.href, "_blank");
+    }, 500); // 500ms hold duration
+  };
+
+  const handleHoldEnd = () => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
   };
 
   // Fetch all jobs on mount
@@ -587,7 +597,11 @@ export default function HomePage() {
                 key={app.id}
                 id={`job-card-${app.id}`}
                 onClick={() => handleApplicationClick(app)}
-                onDoubleClick={() => handleApplicationDoubleClick(app)}
+                onMouseDown={() => handleHoldStart(app)}
+                onMouseUp={handleHoldEnd}
+                onMouseLeave={handleHoldEnd}
+                onTouchStart={() => handleHoldStart(app)}
+                onTouchEnd={handleHoldEnd}
                 className={`px-6 py-4 transition-all duration-200 cursor-pointer group ${
                   isSelected ? "bg-accent" : "hover:bg-accent"
                 }`}
