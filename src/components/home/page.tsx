@@ -15,7 +15,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { jobsApi } from "@/lib/api";
 import type { Application } from "@/types/application";
 import {
@@ -378,7 +377,7 @@ export default function HomePage() {
           <div className="px-6 pb-3 border-b border-border flex gap-4 h-35.5">
             {/* Heatmap */}
             <div className="relative flex-1 min-w-0 h-full">
-              <ScrollArea className="h-full [&_[data-radix-scroll-area-viewport]>div]:h-full! [&_[data-radix-scroll-area-viewport]>div]:block! **:data-[slot=scroll-area-scrollbar]:absolute **:data-[slot=scroll-area-scrollbar]:top-0 **:data-[slot=scroll-area-scrollbar]:left-0 **:data-[slot=scroll-area-scrollbar]:right-0 **:data-[slot=scroll-area-scrollbar]:opacity-0 **:data-[slot=scroll-area-scrollbar]:hover:opacity-100 [&_[data-slot=scroll-area-scrollbar][data-state=visible]]:opacity-100 **:data-[slot=scroll-area-scrollbar]:transition-opacity">
+              <div className="h-full overflow-x-auto overflow-y-visible pb-1">
                 <GitHubHeatmap
                   data={heatmapData}
                   maxCount={globalMaxCount}
@@ -401,8 +400,7 @@ export default function HomePage() {
                   onCellClick={handleHeatmapCellClick}
                   className="[&_.github-heatmap]:p-0! [&_.heatmap-year]:mb-0! [&_.heatmap-title]:hidden [&_.heatmap-legend]:mt-2! [&_.heatmap-legend]:mb-1! h-full"
                 />
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
+              </div>
 
               {/* Shadow overlay on the right */}
               <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-linear-to-l from-white to-transparent" />
@@ -582,7 +580,11 @@ export default function HomePage() {
       </div>
 
       {/* Scrollable Results Section */}
-      <MyScrollableSection ref={scrollContainerRef} onScroll={handleScroll} className="">
+      <MyScrollableSection
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className=""
+      >
         {loading ? (
           <div className="px-6 py-12 text-center">
             <div className="inline-block w-5 h-5 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin mb-3" />

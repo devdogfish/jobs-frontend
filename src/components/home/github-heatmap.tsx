@@ -18,6 +18,7 @@ interface CellData {
 interface HoveredCell extends CellData {
   x: number;
   y: number;
+  rect?: DOMRect;
 }
 
 interface MonthLabel {
@@ -286,9 +287,11 @@ const GitHubHeatmap = ({
           transition: all 0.1s ease;
         }
 
-        .heatmap-cell:hover {
-          outline: 2px solid rgba(0, 0, 0, 0.3);
-          outline-offset: 0;
+        .heatmap-hover-ring {
+          position: fixed;
+          pointer-events: none;
+          border: 2px solid rgba(0, 0, 0, 0.3);
+          z-index: 999;
         }
 
         .heatmap-cell.out-of-range {
@@ -390,20 +393,24 @@ const GitHubHeatmap = ({
                                 onCellClick(cell.date, cell.count);
                               }
                             }}
-                            onMouseEnter={(e) =>
+                            onMouseEnter={(e) => {
+                              const rect = e.currentTarget.getBoundingClientRect();
                               setHoveredCell({
                                 ...cell,
                                 x: e.clientX,
                                 y: e.clientY,
-                              })
-                            }
-                            onMouseMove={(e) =>
+                                rect,
+                              });
+                            }}
+                            onMouseMove={(e) => {
+                              const rect = e.currentTarget.getBoundingClientRect();
                               setHoveredCell({
                                 ...cell,
                                 x: e.clientX,
                                 y: e.clientY,
-                              })
-                            }
+                                rect,
+                              });
+                            }}
                             onMouseLeave={() => setHoveredCell(null)}
                           />
                         );
@@ -418,15 +425,28 @@ const GitHubHeatmap = ({
       })}
 
       {hoveredCell && (
-        <div
-          className="heatmap-tooltip"
-          style={{
-            left: hoveredCell.x + 10,
-            top: hoveredCell.y - 30,
-          }}
-        >
-          {tooltipContent}
-        </div>
+        <>
+          <div
+            className="heatmap-tooltip"
+            style={{
+              left: hoveredCell.x + 10,
+              top: hoveredCell.y - 30,
+            }}
+          >
+            {tooltipContent}
+          </div>
+          {hoveredCell.rect && (
+            <div
+              className="heatmap-hover-ring"
+              style={{
+                left: hoveredCell.rect.left - 2,
+                top: hoveredCell.rect.top - 2,
+                width: hoveredCell.rect.width + 4,
+                height: hoveredCell.rect.height + 4,
+              }}
+            />
+          )}
+        </>
       )}
 
       {/* DO NOT DELETE - Legend hidden for now, uncomment to restore:
