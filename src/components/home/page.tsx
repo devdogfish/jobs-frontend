@@ -324,6 +324,12 @@ export default function HomePage() {
     [applications],
   );
 
+  // Check if there are applications made today
+  const hasApplicationsToday = useMemo(() => {
+    const today = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
+    return applications.some((app) => app.date === today);
+  }, [applications]);
+
   if (error) {
     return (
       <div className="h-screen bg-background flex items-center justify-center">
@@ -348,10 +354,12 @@ export default function HomePage() {
       {/* Fixed Top Section */}
       <div className="shrink-0  z-10">
         {/* Navigation */}
-        <Navbar
-          link={`/report?backUrl=${encodeURIComponent(searchParams.toString() ? `/?${searchParams.toString()}` : "/")}`}
-          text="Daily Report"
-        />
+        {hasApplicationsToday && (
+          <Navbar
+            link={`/report?backUrl=${encodeURIComponent(searchParams.toString() ? `/?${searchParams.toString()}` : "/")}`}
+            text="Daily Report"
+          />
+        )}
 
         {/* Header + Heatmap + Search in one unified block */}
         <CenteredBox>
