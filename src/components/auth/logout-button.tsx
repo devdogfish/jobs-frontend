@@ -1,8 +1,15 @@
-import { logout } from "@/lib/auth";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { AuthContext } from "@/context/AuthContext";
 
 export function LogoutButton() {
+  const authContext = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
+
+  if (!authContext) {
+    throw new Error("LogoutButton must be used within AuthProvider");
+  }
+
+  const { logout } = authContext;
 
   async function handleLogout() {
     setLoading(true);

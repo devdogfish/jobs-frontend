@@ -5,6 +5,7 @@ import { ReportPage } from "./components/report/page";
 import AuthPage from "./components/auth/page";
 import HomePage from "./components/home/page";
 import { getTodayISOString } from "./lib/utils";
+import { AuthProvider } from "./context/AuthContext";
 // import MyMap from "./components/home/map";
 
 function ReportRedirect() {
@@ -13,20 +14,22 @@ function ReportRedirect() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<AuthPage />} />
-        <Route element={<Layout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/report/:date" element={<ReportPage />} />
-        </Route>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<AuthPage />} />
+          <Route element={<Layout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/report/:date" element={<ReportPage />} />
+          </Route>
 
-        <Route path="/report" element={<ReportRedirect />} />
-        {/* <Route path="/map" element={<MyMap />} /> */}
+          <Route path="/report" element={<ReportRedirect />} />
+          {/* <Route path="/map" element={<MyMap />} /> */}
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

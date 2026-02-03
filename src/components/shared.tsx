@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { LogOut } from "lucide-react";
-import React from "react";
+import React, { useContext } from "react";
+import { AuthContext } from "@/context/AuthContext";
 
 export function CardWithOptionalShadow({
   children,
@@ -64,6 +65,15 @@ export function Navbar({
   text: string
   withShadow?: boolean;
 }) {
+  const authContext = useContext(AuthContext);
+
+  async function handleLogout() {
+    if (authContext) {
+      await authContext.logout();
+      window.location.href = "/";
+    }
+  }
+
   return (
     <CenteredBox>
       <nav>
@@ -74,6 +84,7 @@ export function Navbar({
           {/* <div className="max-w-225 mx-auto px-6 py-2.5 flex items-center justify-between border-x border-b border-border"> */}
           <button
             type="button"
+            onClick={handleLogout}
             className="font-mono text-[0.75rem] text-muted-foreground uppercase tracking-wide
                        border border-border bg-card px-3 py-1.5
                        transition-all duration-200
