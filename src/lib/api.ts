@@ -1,6 +1,7 @@
 import type { Application } from "../types/application";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "";
+const IS_DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
 
 interface ApiResponse<T> {
   data?: T;
@@ -30,7 +31,7 @@ async function apiRequest<T>(
 
     if (response.status === 401) {
       window.dispatchEvent(new CustomEvent("auth:unauthorized"));
-      return { error: "Unauthorized" };
+      return { error: "Invalid credentials" };
     }
 
     if (!response.ok) {
@@ -53,15 +54,19 @@ export const authApi = {
   login: (password: string) =>
     apiRequest<{ success: boolean }>("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ password, demoMode: IS_DEMO_MODE }),
     }),
 
   logout: () =>
     apiRequest<void>("/auth/logout", {
       method: "POST",
+      headers: IS_DEMO_MODE ? { "x-demo-mode": "true" } : undefined,
     }),
 
-  checkSession: () => apiRequest<{ authenticated: boolean }>("/auth/session"),
+  checkSession: () =>
+    apiRequest<{ authenticated: boolean }>("/auth/session", {
+      headers: IS_DEMO_MODE ? { "x-demo-mode": "true" } : undefined,
+    }),
 };
 
 export const jobsApi = {
@@ -75,6 +80,7 @@ export const jobsApi = {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          ...(IS_DEMO_MODE && { "x-demo-mode": "true" }),
         },
       });
 

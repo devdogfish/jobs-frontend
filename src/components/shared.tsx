@@ -48,7 +48,11 @@ export const MyScrollableSection = React.forwardRef<
   }
 >(({ children, onScroll, className }, ref) => {
   return (
-    <div ref={ref} className={cn("flex-1 overflow-y-auto", className)} onScroll={onScroll}>
+    <div
+      ref={ref}
+      className={cn("flex-1 overflow-y-auto", className)}
+      onScroll={onScroll}
+    >
       <div className="max-w-225 mx-auto bg-card border-x border-border min-h-full">
         <div className="divide-y divide-border">{children}</div>
       </div>
@@ -57,12 +61,10 @@ export const MyScrollableSection = React.forwardRef<
 });
 
 export function Navbar({
-  link,
-  text,
+  button: { link, text },
   withShadow = false,
 }: {
-  link: string;
-  text: string
+  button: { link: string; text: string; showButton: boolean };
   withShadow?: boolean;
 }) {
   const authContext = useContext(AuthContext);
@@ -86,13 +88,13 @@ export function Navbar({
             type="button"
             onClick={handleLogout}
             className="font-mono text-[0.75rem] text-muted-foreground uppercase tracking-wide
-                       border border-border bg-card px-3 py-1.5
+                       border border-border bg-card p-2
                        transition-all duration-200
                        hover:shadow-[1px_1px_0px_#2b2b2b]
                        focus:outline-none focus:shadow-[2px_2px_0px_#2b2b2b]"
           >
-            <LogOut className="inline-block w-3.5 h-3.5 mr-1.5 -mt-0.5" />
-            Log Out
+            <LogOut className=" w-3.5 h-3.5 rotate-180" />
+            {/* Log Out */}
           </button>
           <a
             href={link}
@@ -107,5 +109,32 @@ export function Navbar({
         </CardWithOptionalShadow>
       </nav>
     </CenteredBox>
+  );
+}
+
+export function Title({ text }: { text: string }) {
+  return (
+    <h1 className="font-['Playfair_Display',serif] font-bold uppercase tracking-[-0.5px] text-[2.5rem] mb-1">
+      {text}
+    </h1>
+  );
+}
+
+export function Subtitle({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "font-['Courier_New',monospace] text-xs text-[#666] uppercase",
+        className,
+      )}
+    >
+      {children}
+    </div>
   );
 }

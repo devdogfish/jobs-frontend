@@ -4,7 +4,7 @@ import { buildReport } from "@/lib/report";
 import { FeaturedMainCard } from "./FeaturedMainCard";
 import { FeaturedSideCard } from "./FeaturedSideCard";
 import { ListCard } from "./ListCard";
-import { MyScrollableSection, Navbar } from "../shared";
+import { MyScrollableSection, Navbar, Subtitle, Title } from "../shared";
 
 interface NewspaperProps {
   applications: Application[];
@@ -16,19 +16,19 @@ interface NewspaperProps {
 // Skeleton components for loading states
 function HeaderSkeleton({ date }: { date: string }) {
   return (
-    <div className="font-['Courier_New',monospace] text-xs text-[#666] uppercase flex items-center justify-center gap-1">
+    <Subtitle className="flex items-center justify-center gap-1">
       <div className="h-3 w-4 bg-muted-foreground/20 rounded animate-pulse inline-block" />
       <span> APPLICATIONS • ISSUE #</span>
       <div className="h-3 w-8 bg-muted-foreground/20 rounded animate-pulse inline-block" />
       <span> • {date} • AVG. </span>
       <div className="h-3 w-12 bg-muted-foreground/20 rounded animate-pulse inline-block" />
-    </div>
+    </Subtitle>
   );
 }
 
 function FeaturedMainCardSkeleton() {
   return (
-    <article className="h-full border border-[#2b2b2b] p-5 bg-[#fbfbfb] flex flex-col justify-between min-h-[400px]">
+    <article className="h-full border border-[#2b2b2b] p-5 bg-[#fbfbfb] flex flex-col justify-between min-h-100">
       <div>
         {/* Location & salary */}
         <div className="h-3 w-32 bg-muted-foreground/20 rounded animate-pulse mb-2" />
@@ -56,7 +56,7 @@ function FeaturedMainCardSkeleton() {
 
 function FeaturedSideCardSkeleton() {
   return (
-    <article className="border border-[#2b2b2b] p-5 bg-white flex flex-col justify-center min-h-[150px]">
+    <article className="border border-[#2b2b2b] p-5 bg-white flex flex-col justify-center min-h-37.5">
       {/* Location & salary */}
       <div className="h-3 w-28 bg-muted-foreground/20 rounded animate-pulse mb-2" />
       {/* Title */}
@@ -90,7 +90,12 @@ function ListCardSkeleton() {
   );
 }
 
-export function Newspaper({ applications, date, backUrl = "/", loading = false }: NewspaperProps) {
+export function Newspaper({
+  applications,
+  date,
+  backUrl = "/",
+  loading = false,
+}: NewspaperProps) {
   const [isScrolled, setIsScrolled] = useState(false);
 
   const reportDate = date || new Date().toISOString().split("T")[0];
@@ -109,23 +114,27 @@ export function Newspaper({ applications, date, backUrl = "/", loading = false }
     <div className="h-screen bg-background text-foreground font-sans leading-relaxed flex flex-col overflow-hidden">
       {/* Fixed Top Section */}
       <div className="shrink-0 bg-card z-10">
-        <Navbar link={backUrl} text="Home" withShadow={isScrolled} />
+        <Navbar
+          button={{
+            link: backUrl,
+            text: "Home",
+            showButton: true,
+          }}
+          withShadow={isScrolled}
+        />
       </div>
       <div className="flex-1 flex flex-col overflow-hidden">
         <MyScrollableSection onScroll={handleScroll}>
           {/* Header */}
           <header className="text-center px-6 py-3">
-            <h1 className="font-['Playfair_Display',serif] font-bold uppercase tracking-[-0.5px] text-[2.5rem] mb-1">
-              The Daily Application
-            </h1>
+            <Title text="The Daily Application" />
             {loading ? (
               <HeaderSkeleton date={metadata.date} />
             ) : (
-              <div className="font-['Courier_New',monospace] text-xs text-[#666] uppercase">
-                {metadata.totalApplications} APPLICATIONS • ISSUE #
-                {metadata.issueNumber} • {metadata.date} • AVG.{" "}
-                {metadata.averageSalary}
-              </div>
+              <Subtitle>
+                {metadata.totalApplications} APPLICATIONS • {metadata.date} •
+                AVG. {metadata.averageSalary}
+              </Subtitle>
             )}
           </header>
 
@@ -151,7 +160,9 @@ export function Newspaper({ applications, date, backUrl = "/", loading = false }
                   {/* Featured Main Application */}
                   {featuredApplications.main && (
                     <div className="md:col-span-2 md:row-span-2">
-                      <FeaturedMainCard application={featuredApplications.main} />
+                      <FeaturedMainCard
+                        application={featuredApplications.main}
+                      />
                     </div>
                   )}
 

@@ -354,12 +354,13 @@ export default function HomePage() {
       {/* Fixed Top Section */}
       <div className="shrink-0  z-10">
         {/* Navigation */}
-        {hasApplicationsToday && (
-          <Navbar
-            link={`/report?backUrl=${encodeURIComponent(searchParams.toString() ? `/?${searchParams.toString()}` : "/")}`}
-            text="Daily Report"
-          />
-        )}
+        <Navbar
+          button={{
+            link: `/report?backUrl=${encodeURIComponent(searchParams.toString() ? `/?${searchParams.toString()}` : "/")}`,
+            text: "Daily Report",
+            showButton: hasApplicationsToday,
+          }}
+        />
 
         {/* Header + Heatmap + Search in one unified block */}
         <CenteredBox>
